@@ -84,8 +84,8 @@ def calculate_elo(winner_elo, loser_elo, k=24):
     new_loser_elo = loser_elo + k * (0 - expected_loser)
 
     # Debugging output
-    print(f"Winner Elo Before: {winner_elo}, Loser Elo Before: {loser_elo}")
-    print(f"Winner Elo After: {round(new_winner_elo)}, Loser Elo After: {round(new_loser_elo)}")
+    st.write(f"Winner Elo Before: {winner_elo}, Loser Elo Before: {loser_elo}")
+    st.write(f"Winner Elo After: {round(new_winner_elo)}, Loser Elo After: {round(new_loser_elo)}")
 
     return round(new_winner_elo), round(new_loser_elo)
 
@@ -194,16 +194,23 @@ else:
 if st.button("Next Matchup", use_container_width=True):
     with st.status("Loading next matchup... ⏳", expanded=False) as status:
         # ✅ Select new Player 1 from weighted selection
+        # Select Player 1
         st.session_state["player1"] = aggressive_weighted_selection(players_df)
-
-        # ✅ Filter candidate pool for Player 2 (within Elo range)
-        st.session_state["player2_candidates"] = players_df[
-            (players_df["elo"] > st.session_state["player1"]["elo"] - 50) & 
-            (players_df["elo"] < st.session_state["player1"]["elo"] + 50)
-        ]
         
-        # ✅ If no candidates, pick randomly again
-        st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(players_df)
+        # Keep selecting Player 2 until it's different from Player 1
+        while True:
+            st.session_state["player2_candidates"] = players_df[
+                (players_df["elo"] > st.session_state["player1"]["elo"] - 50) & 
+                (players_df["elo"] < st.session_state["player1"]["elo"] + 50)
+            ]
+            
+            # If no candidates, pick randomly again
+            st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(players_df)
+        
+            # Break the loop if Player 2 is different from Player 1
+            if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
+                break
+
 
         # ✅ Reset Elo tracking
         st.session_state["initial_elo"] = {
