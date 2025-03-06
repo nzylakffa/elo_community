@@ -120,10 +120,10 @@ else:
         "Only D/ST": ["D/ST"]
     }
 
-selected_position = st.selectbox("Select Position Filter", list(position_options.keys()), index=0)
+    selected_position = st.selectbox("Select Position Filter", list(position_options.keys()), index=0)
 
-# ✅ Store selection in session state
-st.session_state["selected_position"] = position_options[selected_position]
+    # ✅ Store selection in session state
+    st.session_state["selected_position"] = position_options[selected_position]
 
 
     # 🎯 **Matchup Selection Logic**
