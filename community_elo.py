@@ -156,12 +156,12 @@ else:
                     (filtered_players_df["pos"] == st.session_state["player1"]["pos"])  # ✅ Ensure same position
                 ]
 
-            # ✅ Ensure there are valid candidates before selecting Player 2
-            if st.session_state["player2_candidates"].empty:
-                st.warning("⚠️ Not enough players for the selected position filter. Defaulting to all positions.")
-                st.session_state["player2"] = aggressive_weighted_selection(players_df)  # Default to all players
-            else:
-                st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"])
+                # ✅ Ensure there are valid candidates before selecting Player 2
+                if st.session_state["player2_candidates"].empty:
+                    st.warning("⚠️ Not enough players for the selected position filter. Defaulting to all positions.")
+                    st.session_state["player2"] = aggressive_weighted_selection(players_df)  # Default to all players
+                else:
+                    st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"])
 
             
             if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
