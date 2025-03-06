@@ -5,6 +5,30 @@ import numpy as np
 import random
 import datetime
 
+# 🔧 Remove Streamlit container background & borders
+st.markdown("""
+    <style>
+        /* Remove the outer box */
+        .block-container {
+            padding-top: 0px;
+            padding-bottom: 0px;
+            padding-left: 0px;
+            padding-right: 0px;
+        }
+
+        /* Remove the background color */
+        .main {
+            background-color: transparent !important;
+        }
+
+        /* Remove any borders */
+        section[data-testid="stSidebar"] {
+            border: none !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+
 # 🔧 Supabase Setup
 SUPABASE_URL = st.secrets["supabase"]["url"]
 SUPABASE_KEY = st.secrets["supabase"]["key"]
