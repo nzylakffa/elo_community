@@ -35,8 +35,6 @@ def get_players():
     return df
 
 
-
-
 def get_user_data():
     """Fetches user vote data from Supabase."""
     response = supabase.table("user_votes").select("*").execute()
@@ -52,7 +50,6 @@ def get_user_data():
     return df
 
 
-
 def get_player_value(player_name):
     """Fetch player value from Supabase (if stored in a separate table)."""
     response = supabase.table("player_values").select("value").eq("name", player_name).execute()
@@ -61,7 +58,6 @@ def get_player_value(player_name):
         return float(response.data[0]["value"])
     
     return None
-
 
 
 def update_user_vote(username, count_vote=True):
@@ -111,11 +107,22 @@ else:
     player2 = players_df.sample(1).iloc[0]  # Select another random player
 
     st.title("Who Would You Rather Draft?")
-    st.write(f"{player1['name']} (Elo: {player1['elo']}) vs {player2['name']} (Elo: {player2['elo']})")
 
-    if st.button(f"Pick {player1['name']}"):
-        update_player_elo(player1["name"], player1["elo"] + 10, player2["name"], player2["elo"] - 10)
+    # Create two equal columns for better layout
+    col1, col2 = st.columns(2)
 
-    if st.button(f"Pick {player2['name']}"):
-        update_player_elo(player2["name"], player2["elo"] + 10, player1["name"], player1["elo"] - 10)
+    with col1:
+        st.image(player1["image_url"], width=200)  # Display image
+        st.markdown(f"### {player1['name']}")  # Player name
+        st.markdown(f"**Elo:** {player1['elo']}")  # Elo rating
+        if st.button(player1["name"]):  # Button without "Pick"
+            update_player_elo(player1["name"], player1["elo"] + 10, player2["name"], player2["elo"] - 10)
+
+    with col2:
+        st.image(player2["image_url"], width=200)
+        st.markdown(f"### {player2['name']}")
+        st.markdown(f"**Elo:** {player2['elo']}")
+        if st.button(player2["name"]):
+            update_player_elo(player2["name"], player2["elo"] + 10, player1["name"], player1["elo"] - 10)
+
 
