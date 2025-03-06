@@ -13,7 +13,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Test connection
 try:
-    response = supabase.table("players").select("*").execute()
+    response = supabase.table("players").select("*").order("id").execute()
     st.write(response)
 except Exception as e:
     st.error(f"❌ Error connecting to Supabase: {e}")
