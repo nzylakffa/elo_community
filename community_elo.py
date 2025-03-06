@@ -137,9 +137,9 @@ else:
     st.session_state["initial_elo"][player1["name"]] = player1["elo"]
     st.session_state["initial_elo"][player2["name"]] = player2["elo"]
 
-    # 🎯 **Matchup Display**
-    st.markdown("<h1 style='text-align: center;'>Who Would You Rather Draft?</h1>", unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
+# 🎯 **Matchup Display**
+st.markdown("<h1 style='text-align: center;'>Who Would You Rather Draft?</h1>", unsafe_allow_html=True)
+col1, col2 = st.columns(2)
 
 def display_player(player, col, matchup_id):
     with col:
