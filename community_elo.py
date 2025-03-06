@@ -107,7 +107,11 @@ if players_df.empty:
 else:
     # 🎯 **Username Input**
     st.markdown("<h3 style='text-align: center;'>📝 Add a Username to Compete on the Leaderboard!</h3>", unsafe_allow_html=True)
-    username = st.text_input("Enter Username", value=st.session_state.get("username", ""), max_chars=15)
+    username = st.text_input("Enter Username", value=st.session_state.get("username", "").lower(), max_chars=15)
+    
+    if username:
+        st.session_state["username"] = username.lower()  # ✅ Store as lowercase
+        update_user_vote(st.session_state["username"])
 
     if username:
         st.session_state["username"] = username.lower()
@@ -172,8 +176,18 @@ else:
             change = st.session_state["updated_elo"][player["name"]] - st.session_state["initial_elo"][player["name"]]
             st.markdown(f"<div style='background-color:{color}; padding: 10px; border-radius: 5px; text-align: center;'><b>{player['name']}</b>: {st.session_state['updated_elo'][player['name']]} ELO ({change:+})</div>", unsafe_allow_html=True)
 
-        # 🎯 **Fetch User Data for Leaderboards**
+    # 🎯 **Fetch User Data for Leaderboards**
     user_data = get_user_data()
+    
+    # ✅ Convert all usernames to lowercase
+    user_data["username"] = user_data["username"].str.lower()
+    
+    # ✅ Merge duplicate usernames (sum votes)
+    user_data = user_data.groupby("username", as_index=False).agg({
+        "total_votes": "sum",
+        "weekly_votes": "sum",
+        "last_voted": "max"  # Keep the most recent vote date
+    })
 
     # Ensure columns are numeric before sorting
     user_data["total_votes"] = pd.to_numeric(user_data["total_votes"], errors="coerce").fillna(0).astype(int)
