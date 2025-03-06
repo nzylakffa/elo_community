@@ -35,8 +35,9 @@ def get_user_data():
         return pd.DataFrame(columns=["username", "total_votes", "weekly_votes", "last_voted"])
 
     df = pd.DataFrame(data)
-    df["total_votes"] = df["total_votes"].astype(int)
-    df["weekly_votes"] = df["weekly_votes"].astype(int)
+    df["total_votes"] = df["total_votes"].astype(float)  # ✅ Now supports decimal votes
+    df["weekly_votes"] = df["weekly_votes"].astype(float)
+
 
     return df
 
