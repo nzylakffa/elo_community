@@ -73,11 +73,22 @@ def update_player_elo(player1_name, new_elo1, player2_name, new_elo2):
 
 ### ✅ **Elo Calculation**
 def calculate_elo(winner_elo, loser_elo, k=24):
+    """Properly adjust Elo ratings so the winner gains and loser drops correctly."""
+
+    # Expected scores based on Elo ratings
     expected_winner = 1 / (1 + 10 ** ((loser_elo - winner_elo) / 400))
     expected_loser = 1 / (1 + 10 ** ((winner_elo - loser_elo) / 400))
+
+    # New Elo ratings
     new_winner_elo = winner_elo + k * (1 - expected_winner)
     new_loser_elo = loser_elo + k * (0 - expected_loser)
+
+    # Debugging output
+    print(f"Winner Elo Before: {winner_elo}, Loser Elo Before: {loser_elo}")
+    print(f"Winner Elo After: {round(new_winner_elo)}, Loser Elo After: {round(new_loser_elo)}")
+
     return round(new_winner_elo), round(new_loser_elo)
+
 
 ### ✅ **Weighted Selection for Matchups**
 def aggressive_weighted_selection(df, weight_col="elo", alpha=6):
