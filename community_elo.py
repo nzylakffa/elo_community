@@ -24,13 +24,11 @@ def get_players():
     df["elo"] = pd.to_numeric(df["elo"], errors="coerce")
     df["Votes"] = pd.to_numeric(df["Votes"], errors="coerce")
     
-    # Compute rankings dynamically
     df["pos_rank"] = df.groupby("pos")["elo"].rank(method="min", ascending=False).astype(int)
 
     return df
 
-
-### ✅ **Fetch User Vote Data from Supabase**
+### ✅ **Fetch User Vote Data**
 def get_user_data():
     response = supabase.table("user_votes").select("*").execute()
     data = response.data
@@ -44,7 +42,6 @@ def get_user_data():
 
     return df
 
-
 ### ✅ **Update User Vote Count**
 def update_user_vote(username):
     today = datetime.date.today().strftime("%Y-%m-%d")
@@ -53,7 +50,6 @@ def update_user_vote(username):
     user = response.data
 
     if not user:
-        # New user → Insert vote count
         supabase.table("user_votes").insert({
             "username": username.lower(),
             "total_votes": 1,
@@ -67,28 +63,23 @@ def update_user_vote(username):
             "weekly_votes": user["weekly_votes"] + 1,
             "last_voted": today
         }
-
-        # Reset weekly votes on Monday
         if datetime.datetime.today().weekday() == 0 and user["last_voted"] != today:
-            update_data["weekly_votes"] = 1  # Reset to 1 (new vote)
+            update_data["weekly_votes"] = 1  # Reset to 1 on Monday
 
         supabase.table("user_votes").update(update_data).eq("username", username.lower()).execute()
 
-
-### ✅ **Update Player Elo Ratings in Supabase**
+### ✅ **Update Player Elo Ratings**
 def update_player_elo(player1_name, new_elo1, player2_name, new_elo2):
     supabase.table("players").update({"elo": new_elo1}).eq("name", player1_name).execute()
     supabase.table("players").update({"elo": new_elo2}).eq("name", player2_name).execute()
 
-
-### ✅ **Elo Calculation Logic**
+### ✅ **Elo Calculation**
 def calculate_elo(winner_elo, loser_elo, k=24):
     expected_winner = 1 / (1 + 10 ** ((loser_elo - winner_elo) / 400))
     expected_loser = 1 / (1 + 10 ** ((winner_elo - loser_elo) / 400))
     new_winner_elo = winner_elo + k * (1 - expected_winner)
     new_loser_elo = loser_elo + k * (0 - expected_loser)
     return round(new_winner_elo), round(new_loser_elo)
-
 
 ### ✅ **Weighted Selection for Matchups**
 def aggressive_weighted_selection(df, weight_col="elo", alpha=6):
@@ -99,53 +90,68 @@ def aggressive_weighted_selection(df, weight_col="elo", alpha=6):
     
     return df.sample(weights=df["weight"]).iloc[0]
 
-
-### 🔥 **Initialize Matchup (Pull Players & Select Randomly)**
+# 🔥 **Initialize Matchup**
 players_df = get_players()
 
 if players_df.empty:
     st.error("⚠️ No players available!")
 else:
-    # Select two players using weighted probability
-    player1 = aggressive_weighted_selection(players_df)
-    player2_candidates = players_df[(players_df["elo"] > player1["elo"] - 50) & (players_df["elo"] < player1["elo"] + 50)]
+    # Add Username Input
+    st.markdown("<h3 style='text-align: center;'>📝 Add a Username to Compete on the Leaderboard!</h3>", unsafe_allow_html=True)
+    username = st.text_input("Enter Username", value=st.session_state.get("username", ""), max_chars=15)
 
-    player2 = aggressive_weighted_selection(player2_candidates) if not player2_candidates.empty else aggressive_weighted_selection(players_df)
+    if username:
+        st.session_state["username"] = username.lower()
+        update_user_vote(username)  # Track user but don't count extra votes
 
+    # Select players
+    if "player1" not in st.session_state or "player2" not in st.session_state:
+        st.session_state.player1 = aggressive_weighted_selection(players_df)
+        st.session_state.player2_candidates = players_df[
+            (players_df["elo"] > st.session_state.player1["elo"] - 50) & (players_df["elo"] < st.session_state.player1["elo"] + 50)
+        ]
+        st.session_state.player2 = aggressive_weighted_selection(st.session_state.player2_candidates) if not st.session_state.player2_candidates.empty else aggressive_weighted_selection(players_df)
+
+    player1 = st.session_state.player1
+    player2 = st.session_state.player2
+
+    # Store initial Elo ratings
+    if "initial_elo" not in st.session_state:
+        st.session_state["initial_elo"] = {}
+
+    if player1["name"] not in st.session_state["initial_elo"]:
+        st.session_state["initial_elo"][player1["name"]] = player1["elo"]
+    if player2["name"] not in st.session_state["initial_elo"]:
+        st.session_state["initial_elo"][player2["name"]] = player2["elo"]
+
+    # UI
     st.title("Who Would You Rather Draft?")
-
     col1, col2 = st.columns(2)
 
-    with col1:
-        img1 = player1["image_url"] if isinstance(player1["image_url"], str) and player1["image_url"].startswith("http") else DEFAULT_IMAGE
-        st.image(img1, width=200)
-        if st.button(player1["name"], use_container_width=True):
-            new_elo1, new_elo2 = calculate_elo(player1["elo"], player2["elo"])
-            update_player_elo(player1["name"], new_elo1, player2["name"], new_elo2)
-            update_user_vote(st.session_state.get("username", "anonymous"))
-            st.rerun()
+    def display_player(player, col):
+        with col:
+            st.image(player["image_url"] if player["image_url"] else DEFAULT_IMAGE, width=200)
+            if st.button(player["name"], use_container_width=True):
+                new_elo1, new_elo2 = calculate_elo(player1["elo"], player2["elo"]) if player["name"] == player1["name"] else calculate_elo(player2["elo"], player1["elo"])
+                update_player_elo(player1["name"], new_elo1, player2["name"], new_elo2)
+                update_user_vote(st.session_state["username"])
+                st.session_state["updated_elo"] = {player1["name"]: new_elo1, player2["name"]: new_elo2}
+                st.session_state["selected_player"] = player["name"]
 
-    with col2:
-        img2 = player2["image_url"] if isinstance(player2["image_url"], str) and player2["image_url"].startswith("http") else DEFAULT_IMAGE
-        st.image(img2, width=200)
-        if st.button(player2["name"], use_container_width=True):
-            new_elo2, new_elo1 = calculate_elo(player2["elo"], player1["elo"])
-            update_player_elo(player2["name"], new_elo2, player1["name"], new_elo1)
-            update_user_vote(st.session_state.get("username", "anonymous"))
-            st.rerun()
+    display_player(player1, col1)
+    display_player(player2, col2)
 
+    # Show Elo update after selection
+    if "selected_player" in st.session_state and st.session_state["selected_player"]:
+        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center;'>📊 Elo Changes</h3>", unsafe_allow_html=True)
 
-### 🏆 **Leaderboards (All-Time & Weekly)**
-st.markdown("## 🏆 All-Time Leaderboard")
-user_data = get_user_data()
-user_data = user_data.sort_values(by="total_votes", ascending=False).head(5)
+        for player in [player1, player2]:
+            color = "yellow" if player["name"] == st.session_state["selected_player"] else "transparent"
+            change = st.session_state["updated_elo"][player["name"]] - st.session_state["initial_elo"][player["name"]]
+            st.markdown(f"<div style='background-color:{color}; padding: 10px; border-radius: 5px; text-align: center;'><b>{player['name']}</b>: {st.session_state['updated_elo'][player['name']]} ELO ({change:+})</div>", unsafe_allow_html=True)
 
-st.dataframe(user_data[["username", "total_votes", "last_voted"]], hide_index=True, use_container_width=True)
-
-st.markdown("## ⏳ Weekly Leaderboard")
-weekly_data = user_data.sort_values(by="weekly_votes", ascending=False).head(5)
-st.dataframe(weekly_data[["username", "weekly_votes", "last_voted"]], hide_index=True, use_container_width=True)
-
-# **Next Matchup Button**
-if st.button("Next Matchup", key="next_matchup", use_container_width=True):
-    st.rerun()
+    # Next Matchup Button
+    if st.button("Next Matchup", use_container_width=True):
+        del st.session_state["selected_player"]
+        st.rerun()
