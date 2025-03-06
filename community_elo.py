@@ -119,11 +119,15 @@ else:
         "Only TEs": ["TE"],
         "Only D/ST": ["D/ST"]
     }
-
+    
     selected_position = st.selectbox("Select Position Filter", list(position_options.keys()), index=0)
-
-    # ✅ Store selection in session state
-    st.session_state["selected_position"] = position_options[selected_position]
+    
+    # ✅ Check if selection has changed
+    if "selected_position" not in st.session_state or st.session_state["selected_position"] != position_options[selected_position]:
+        st.session_state["selected_position"] = position_options[selected_position]
+        st.session_state["player1"] = None  # Reset matchup
+        st.session_state["player2"] = None
+        st.rerun()  # ✅ Force a rerun when position changes
 
 
     # 🎯 **Matchup Selection Logic**
