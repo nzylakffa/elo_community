@@ -11,14 +11,6 @@ SUPABASE_KEY = st.secrets["supabase"]["key"]
 # Create Supabase client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Test connection
-try:
-    response = supabase.table("players").select("*").order("id").execute()
-    st.write(response)
-except Exception as e:
-    st.error(f"❌ Error connecting to Supabase: {e}")
-
-
 def get_players():
     """Fetches all players from Supabase and returns a DataFrame."""
     response = supabase.table("players").select("*").order("id").execute()
