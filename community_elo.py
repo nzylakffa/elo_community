@@ -87,13 +87,21 @@ def calculate_elo(winner_elo, loser_elo, k=24):
 
 
 ### ✅ **Weighted Selection for Matchups**
-def aggressive_weighted_selection(df, weight_col="elo", alpha=6):
+def aggressive_weighted_selection(df, weight_col="elo", alpha=4):
     df = df.copy()
-    df["normalized_elo"] = (df[weight_col] - df[weight_col].min()) / (df[weight_col].max() - df[weight_col].min())
+
+    if df.empty:
+        raise ValueError("⚠️ No valid players available for selection!")
+
+    df["normalized_elo"] = (df[weight_col] - df[weight_col].min()) / (df[weight_col].max() - df[weight_col"].min() + 1e-9)  # ✅ Prevent division by zero
     df["weight"] = df["normalized_elo"] ** alpha
     df["weight"] /= df["weight"].sum()
-    
+
+    if df["weight"].sum() == 0:
+        raise ValueError("⚠️ All players have zero weights. Cannot sample.")
+
     return df.sample(weights=df["weight"]).iloc[0]
+
 
 # 🔥 **Initialize Matchup**
 players_df = get_players()
@@ -141,8 +149,14 @@ else:
                 (filtered_players_df["elo"] > st.session_state["player1"]["elo"] - 50) & 
                 (filtered_players_df["elo"] < st.session_state["player1"]["elo"] + 50)
             ]
-            st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(filtered_players_df)
-    
+            # ✅ Ensure there are valid candidates before selecting Player 2
+            if st.session_state["player2_candidates"].empty:
+                st.warning("⚠️ Not enough players for the selected position filter. Defaulting to all positions.")
+                st.session_state["player2"] = aggressive_weighted_selection(players_df)  # Default to all players
+            else:
+                st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"])
+
+            
             if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
                 break  # ✅ Ensure players are different
     
