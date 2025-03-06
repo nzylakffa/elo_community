@@ -154,33 +154,33 @@ else:
     if "selected_position" not in st.session_state or st.session_state["selected_position"] != position_options[selected_position]:
         st.session_state["selected_position"] = position_options[selected_position]
         
-        # ✅ Filter players based on the selected position (only once)
-        filtered_players_df = players_df if st.session_state.get("selected_position") is None else players_df[
-            players_df["pos"].isin(st.session_state["selected_position"])
+        # ✅ Ensure position filter is set
+        selected_position = st.session_state.get("selected_position", [])
+        
+        # ✅ Filter players based on position selection
+        filtered_players_df = players_df if not selected_position else players_df[
+            players_df["pos"].isin(selected_position)
         ]
         
-        # ✅ Ensure there are enough players
+        # ✅ Prevent empty filtered list
         if filtered_players_df.empty:
-            st.warning("⚠️ No players available for the selected position filter. Showing all positions instead.")
-            filtered_players_df = players_df  # Default to all positions
+            st.warning("⚠️ No valid players found for the selected position. Showing all positions.")
+            filtered_players_df = players_df  # ✅ Fallback to all players
         
-        # ✅ Select Player 1 from the filtered list
+        # ✅ Select Player 1
         st.session_state["player1"] = aggressive_weighted_selection(filtered_players_df)
-
-
 
         
         while True:
             st.session_state["player2_candidates"] = filtered_players_df[
                 (filtered_players_df["elo"] > st.session_state["player1"]["elo"] - 100) & 
                 (filtered_players_df["elo"] < st.session_state["player1"]["elo"] + 100) & 
-                (filtered_players_df["pos"].isin(st.session_state.get("selected_position", players_df["pos"].unique())))
+                (filtered_players_df["pos"].isin(selected_position))
             ]
-
         
-            # ✅ Ensure a valid Player 2 exists
+            # ✅ Ensure Player 2 has valid options
             if st.session_state["player2_candidates"].empty:
-                st.warning("⚠️ Not enough valid matchups within the Elo range. Selecting another player from the same position.")
+                st.warning("⚠️ Not enough valid matchups. Selecting another player from the same position.")
                 st.session_state["player2"] = aggressive_weighted_selection(filtered_players_df)  # ✅ Fallback to same position pool
             else:
                 st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"])
@@ -188,10 +188,8 @@ else:
             # ✅ Ensure Player 1 and Player 2 are different before exiting loop
             if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
                 break  # ✅ Ensure players are different
-
     
         st.rerun()  # ✅ Force a full update to apply the new selection
-
 
 
     # 🎯 **Matchup Selection Logic**
