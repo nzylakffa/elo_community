@@ -175,6 +175,32 @@ else:
             change = st.session_state["updated_elo"][player["name"]] - st.session_state["initial_elo"][player["name"]]
             st.markdown(f"<div style='background-color:{color}; padding: 10px; border-radius: 5px; text-align: center;'><b>{player['name']}</b>: {st.session_state['updated_elo'][player['name']]} ELO ({change:+})</div>", unsafe_allow_html=True)
 
+# 🎯 **Next Matchup Button**
+if st.button("Next Matchup", use_container_width=True):
+    st.session_state["vote_registered"] = False  # ✅ Reset vote tracking
+
+    # ✅ Select new Player 1
+    st.session_state["player1"] = aggressive_weighted_selection(players_df)
+
+    # ✅ Keep selecting Player 2 until different
+    while True:
+        st.session_state["player2_candidates"] = players_df[
+            (players_df["elo"] > st.session_state["player1"]["elo"] - 50) & 
+            (players_df["elo"] < st.session_state["player1"]["elo"] + 50)
+        ]
+        st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(players_df)
+
+        if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
+            break  # ✅ Ensure players are different
+
+    # ✅ Reset Elo tracking
+    st.session_state["initial_elo"] = {
+        st.session_state["player1"]["name"]: st.session_state["player1"]["elo"],
+        st.session_state["player2"]["name"]: st.session_state["player2"]["elo"]
+    }
+    st.session_state["selected_player"] = None
+    
+
     # 🎯 **Fetch User Data for Leaderboards**
     user_data = get_user_data()
     
@@ -207,31 +233,6 @@ else:
     df_weekly = df_weekly.rename(columns={"username": "Username", "weekly_votes": "Weekly Votes", "last_voted": "Last Voted"})
     df_weekly = df_weekly[["Rank", "Username", "Weekly Votes", "Last Voted"]]
     st.dataframe(df_weekly.set_index("Rank"), hide_index=False, use_container_width=True)
-
-# 🎯 **Next Matchup Button**
-if st.button("Next Matchup", use_container_width=True):
-    st.session_state["vote_registered"] = False  # ✅ Reset vote tracking
-
-    # ✅ Select new Player 1
-    st.session_state["player1"] = aggressive_weighted_selection(players_df)
-
-    # ✅ Keep selecting Player 2 until different
-    while True:
-        st.session_state["player2_candidates"] = players_df[
-            (players_df["elo"] > st.session_state["player1"]["elo"] - 50) & 
-            (players_df["elo"] < st.session_state["player1"]["elo"] + 50)
-        ]
-        st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(players_df)
-
-        if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
-            break  # ✅ Ensure players are different
-
-    # ✅ Reset Elo tracking
-    st.session_state["initial_elo"] = {
-        st.session_state["player1"]["name"]: st.session_state["player1"]["elo"],
-        st.session_state["player2"]["name"]: st.session_state["player2"]["elo"]
-    }
-    st.session_state["selected_player"] = None
     st.session_state["updated_elo"] = {}
 
     st.rerun()
