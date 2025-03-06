@@ -183,14 +183,25 @@ display_player(player2, col2, matchup_id)
 # 🎯 **Show Elo Update**
 if "selected_player" in st.session_state and st.session_state["selected_player"]:
     st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center;'>📊 Elo Changes</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: left;'>FFA Community Elo Ratings</h3>", unsafe_allow_html=True)
 
     for player in [player1, player2]:
-        color = "yellow" if player["name"] == st.session_state["selected_player"] else "transparent"
-        change = st.session_state["updated_elo"][player["name"]] - st.session_state["initial_elo"][player["name"]]
-        st.markdown(f"<div style='background-color:{color}; padding: 10px; border-radius: 5px; text-align: center;'>"
-                    f"<b>{player['name']}</b>: {st.session_state['updated_elo'][player['name']]} ELO ({change:+})"
-                    f"</div>", unsafe_allow_html=True)
+        # ✅ Determine background highlight if selected
+        background_color = "yellow" if player["name"] == st.session_state["selected_player"] else "transparent"
+
+        # ✅ Determine text color for Elo change (green for +, red for -)
+        elo_change = st.session_state["updated_elo"][player["name"]] - st.session_state["initial_elo"][player["name"]]
+        change_color = "green" if elo_change > 0 else "red"
+        change_text = f"<span style='color:{change_color};'>({elo_change:+.1f})</span>"
+
+        # ✅ Display player info in styled div
+        st.markdown(f"""
+        <div style='background-color:{background_color}; padding: 10px; border-radius: 5px; text-align: left;'>
+            <b>{player['name']}</b>: {st.session_state['updated_elo'][player['name']]} ELO {change_text} |
+            <b> {player['pos']} Rank:</b> {player['pos_rank']}
+        </div>
+        """, unsafe_allow_html=True)
+
 
     # 🎯 **Next Matchup Button**
     if st.button("Next Matchup", use_container_width=True):
