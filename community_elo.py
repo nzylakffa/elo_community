@@ -263,26 +263,31 @@ def display_player(player, col, matchup_id):
 
         # ✅ Button is now separate from Markdown (fixes spacing)
         if st.button(player["name"], use_container_width=True):
-            if st.session_state.get("last_voted_matchup") != matchup_id and not st.session_state.get("vote_processed", False):  
-                winner, loser = (player1, player2) if player["name"] == player1["name"] else (player2, player1)
-                new_winner_elo, new_loser_elo = calculate_elo(winner["elo"], loser["elo"])
-            
-                update_player_elo(winner["name"], new_winner_elo, loser["name"], new_loser_elo)
-                if not st.session_state.get("vote_processed", False):  
-                    update_user_vote(st.session_state["username"])  
-                    st.session_state["vote_processed"] = True  # ✅ Prevent extra votes
-                
-                # ✅ Track that this matchup has been voted on
-                st.session_state["last_voted_matchup"] = matchup_id
-                st.session_state["vote_registered"] = True  # ✅ Prevent further votes until reset
-
-                st.session_state["updated_elo"] = {
-                    winner["name"]: new_winner_elo,
-                    loser["name"]: new_loser_elo
-                }
-                st.session_state["selected_player"] = player["name"]
+            # ✅ Prevent clicking without a username
+            if "username" not in st.session_state or not st.session_state["username"].strip():
+                st.warning("⚠️ Please input a username before making a pick! It can be anything!")
             else:
-                st.warning("⚠️ You already voted! Click 'Next Matchup' to vote again.")
+                if st.session_state.get("last_voted_matchup") != matchup_id and not st.session_state.get("vote_processed", False):  
+                    winner, loser = (player1, player2) if player["name"] == player1["name"] else (player2, player1)
+                    new_winner_elo, new_loser_elo = calculate_elo(winner["elo"], loser["elo"])
+        
+                    update_player_elo(winner["name"], new_winner_elo, loser["name"], new_loser_elo)
+                    if not st.session_state.get("vote_processed", False):  
+                        update_user_vote(st.session_state["username"])  # ✅ Only update if username exists
+                        st.session_state["vote_processed"] = True  # ✅ Prevent extra votes
+        
+                    # ✅ Track that this matchup has been voted on
+                    st.session_state["last_voted_matchup"] = matchup_id
+                    st.session_state["vote_registered"] = True  # ✅ Prevent further votes until reset
+        
+                    st.session_state["updated_elo"] = {
+                        winner["name"]: new_winner_elo,
+                        loser["name"]: new_loser_elo
+                    }
+                    st.session_state["selected_player"] = player["name"]
+                else:
+                    st.warning("⚠️ You already voted! Click 'Next Matchup' to vote again.")
+
 
 # ✅ Now call the function AFTER it's defined
 st.markdown("<h1 style='text-align: center;'>Who Would You Rather Draft?</h1>", unsafe_allow_html=True)
