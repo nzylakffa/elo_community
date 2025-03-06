@@ -110,22 +110,23 @@ else:
         update_user_vote(st.session_state["username"])  # ✅ Track the vote
 
     # 🎯 **Matchup Selection Logic**
+    # ✅ Ensure session state variables exist before accessing them
     if "player1" not in st.session_state or "player2" not in st.session_state:
-        # ✅ Generate a unique ID for the matchup to prevent duplicate voting
-        matchup_id = f"{st.session_state['player1']['name']}_vs_{st.session_state['player2']['name']}"
-
-        while True:
-            st.session_state["player1"] = aggressive_weighted_selection(players_df)
-            st.session_state["player2_candidates"] = players_df[
-                (players_df["elo"] > st.session_state["player1"]["elo"] - 50) & (players_df["elo"] < st.session_state["player1"]["elo"] + 50)
-            ]
-            st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(players_df)
-
-            if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
-                break  # ✅ Ensure different players
-
+        st.session_state["player1"] = aggressive_weighted_selection(players_df)
+        st.session_state["player2_candidates"] = players_df[
+            (players_df["elo"] > st.session_state["player1"]["elo"] - 50) & 
+            (players_df["elo"] < st.session_state["player1"]["elo"] + 50)
+        ]
+        st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(players_df)
+    
+        # ✅ Ensure players are different
+        while st.session_state["player2"]["name"] == st.session_state["player1"]["name"]:
+            st.session_state["player2"] = aggressive_weighted_selection(players_df)
+    
+    # ✅ Assign local variables after ensuring session state is initialized
     player1 = st.session_state["player1"]
     player2 = st.session_state["player2"]
+    
     # ✅ Generate a unique ID for the matchup
     matchup_id = f"{player1['name']}_vs_{player2['name']}"
 
@@ -183,26 +184,33 @@ else:
 
     # 🎯 **Next Matchup Button**
     if st.button("Next Matchup", use_container_width=True):
+        # ✅ Reset vote tracking for the new matchup
         st.session_state["last_voted_matchup"] = None  
-        st.session_state["vote_processed"] = False  # ✅ Allow voting again
-
+        st.session_state["vote_processed"] = False  
+        
+        # ✅ Select new Player 1
+        st.session_state["player1"] = aggressive_weighted_selection(players_df)
+        
+        # ✅ Keep selecting Player 2 until it's different from Player 1
         while True:
-            st.session_state["player1"] = aggressive_weighted_selection(players_df)
             st.session_state["player2_candidates"] = players_df[
                 (players_df["elo"] > st.session_state["player1"]["elo"] - 50) & 
                 (players_df["elo"] < st.session_state["player1"]["elo"] + 50)
             ]
             st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(players_df)
-
+        
             if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
                 break  # ✅ Ensure players are different
-
+        
+        # ✅ Reset Elo tracking
         st.session_state["initial_elo"] = {
             st.session_state["player1"]["name"]: st.session_state["player1"]["elo"],
             st.session_state["player2"]["name"]: st.session_state["player2"]["elo"]
         }
         st.session_state["selected_player"] = None
+        
         st.rerun()
+
 
 # 🎯 **Always Show Leaderboards at the Bottom**
 user_data = get_user_data()
