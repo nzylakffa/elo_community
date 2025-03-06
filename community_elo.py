@@ -144,16 +144,19 @@ else:
         with col:
             st.image(player["image_url"] if player["image_url"] else DEFAULT_IMAGE, width=200)
             if st.button(player["name"], use_container_width=True):
-                if st.session_state.get("last_voted_matchup") != matchup_id:  # ✅ Only vote if this matchup hasn't been counted
+                if st.session_state.get("last_voted_matchup") != matchup_id and not st.session_state.get("vote_processed", False):  
                     winner, loser = (player1, player2) if player["name"] == player1["name"] else (player2, player1)
                     new_winner_elo, new_loser_elo = calculate_elo(winner["elo"], loser["elo"])
                 
                     update_player_elo(winner["name"], new_winner_elo, loser["name"], new_loser_elo)
-                    update_user_vote(st.session_state["username"])  # ✅ Vote only once per matchup
-                
+                    if not st.session_state.get("vote_processed", False):  
+                        update_user_vote(st.session_state["username"])  
+                        st.session_state["vote_processed"] = True  # ✅ Prevent extra votes
+                    
                     # ✅ Track that this matchup has been voted on
                     st.session_state["last_voted_matchup"] = matchup_id
                     st.session_state["vote_registered"] = True  # ✅ Prevent further votes until reset
+
                 
                     st.session_state["updated_elo"] = {
                         winner["name"]: new_winner_elo,
@@ -180,8 +183,8 @@ else:
 
     # 🎯 **Next Matchup Button**
     if st.button("Next Matchup", use_container_width=True):
-        st.session_state["last_voted_matchup"] = None  # ✅ Reset vote tracking for the new matchup
-        st.session_state["vote_registered"] = False  # ✅ Reset vote tracking
+        st.session_state["last_voted_matchup"] = None  
+        st.session_state["vote_processed"] = False  # ✅ Allow voting again
 
         while True:
             st.session_state["player1"] = aggressive_weighted_selection(players_df)
