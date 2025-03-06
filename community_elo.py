@@ -87,7 +87,7 @@ def calculate_elo(winner_elo, loser_elo, k=24):
 
 
 ### ✅ **Weighted Selection for Matchups**
-def aggressive_weighted_selection(df, weight_col="elo", alpha=6):
+def aggressive_weighted_selection(df, weight_col="elo", alpha=3):
     df = df.copy()
 
     if df.empty:
@@ -102,7 +102,8 @@ def aggressive_weighted_selection(df, weight_col="elo", alpha=6):
     df["weight"] /= df["weight"].sum()
 
     if df["weight"].sum() == 0:
-        raise ValueError("⚠️ All players have zero weights. Cannot sample.")
+        st.warning("⚠️ All players have zero weights. Falling back to random selection.")
+        return df.sample(n=1).iloc[0]  # ✅ Select a random player instead of failing
 
     return df.sample(weights=df["weight"]).iloc[0]
 
@@ -150,8 +151,8 @@ else:
         
         while True:
             st.session_state["player2_candidates"] = filtered_players_df[
-                (filtered_players_df["elo"] > st.session_state["player1"]["elo"] - 50) & 
-                (filtered_players_df["elo"] < st.session_state["player1"]["elo"] + 50)
+                (filtered_players_df["elo"] > st.session_state["player1"]["elo"] - 100) & 
+                (filtered_players_df["elo"] < st.session_state["player1"]["elo"] + 100)
             ]
             # ✅ Ensure there are valid candidates before selecting Player 2
             if st.session_state["player2_candidates"].empty:
