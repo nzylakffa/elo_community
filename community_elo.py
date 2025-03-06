@@ -137,10 +137,7 @@ else:
     st.session_state["initial_elo"][player1["name"]] = player1["elo"]
     st.session_state["initial_elo"][player2["name"]] = player2["elo"]
 
-# 🎯 **Matchup Display**
-st.markdown("<h1 style='text-align: center;'>Who Would You Rather Draft?</h1>", unsafe_allow_html=True)
-col1, col2 = st.columns(2)
-
+# ✅ Define function first
 def display_player(player, col, matchup_id):
     with col:
         # ✅ Center image using HTML & CSS
@@ -176,8 +173,13 @@ def display_player(player, col, matchup_id):
             else:
                 st.warning("⚠️ You already voted! Click 'Next Matchup' to vote again.")
 
-    display_player(player1, col1, matchup_id)
-    display_player(player2, col2, matchup_id)
+# ✅ Now call the function AFTER it's defined
+st.markdown("<h1 style='text-align: center;'>Who Would You Rather Draft?</h1>", unsafe_allow_html=True)
+col1, col2 = st.columns(2)
+
+display_player(player1, col1, matchup_id)
+display_player(player2, col2, matchup_id)
+
 
     # 🎯 **Show Elo Update**
     if "selected_player" in st.session_state and st.session_state["selected_player"]:
