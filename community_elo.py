@@ -99,6 +99,8 @@ def update_player_elo(player1_name, new_elo1, player2_name, new_elo2):
 players_df = get_players()
 users_df = get_user_data()
 
+DEFAULT_IMAGE = "https://png.pngtree.com/element_our/png/20181205/question-mark-vector-icon-png_256683.jpg"
+
 if players_df.empty:
     st.error("⚠️ No players available! Check your database.")
 else:
@@ -112,11 +114,13 @@ else:
     col1, col2 = st.columns(2)
 
     with col1:
-        st.image(player1["image_url"], width=200)  # Show player image
-        if st.button(player1["name"], use_container_width=True):  # Button with player name only
+        img1 = player1["image_url"] if isinstance(player1["image_url"], str) and player1["image_url"].startswith("http") else DEFAULT_IMAGE
+        st.image(img1, width=200)
+        if st.button(player1["name"], use_container_width=True):
             update_player_elo(player1["name"], player1["elo"] + 10, player2["name"], player2["elo"] - 10)
 
     with col2:
-        st.image(player2["image_url"], width=200)
+        img2 = player2["image_url"] if isinstance(player2["image_url"], str) and player2["image_url"].startswith("http") else DEFAULT_IMAGE
+        st.image(img2, width=200)
         if st.button(player2["name"], use_container_width=True):
             update_player_elo(player2["name"], player2["elo"] + 10, player1["name"], player1["elo"] - 10)
