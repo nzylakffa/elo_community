@@ -22,11 +22,7 @@ except Exception as e:
 def get_players():
     """Fetches all players from Supabase and returns a DataFrame."""
     response = supabase.table("players").select("*").order("id").execute()
-    
-    # Debugging
-    st.write("Raw response:", response)  # Prints the raw response
-    st.write("Data:", response.data)  # Prints just the data part
-    
+       
     data = response.data
 
     if not isinstance(data, list):  # Ensure it's a list before making a DataFrame
