@@ -380,6 +380,9 @@ user_data = user_data.groupby("username", as_index=False).agg({
 user_data["total_votes"] = pd.to_numeric(user_data["total_votes"], errors="coerce").fillna(0).astype(int)
 user_data["weekly_votes"] = pd.to_numeric(user_data["weekly_votes"], errors="coerce").fillna(0).astype(int)
 
+# ✅ Convert "Last Voted" to readable format (Weekday, Month Day)
+user_data["last_voted"] = pd.to_datetime(user_data["last_voted"], errors="coerce").dt.strftime("%A, %B %d")
+
 # 🎖️ **All-Time Leaderboard**
 st.markdown("<h2 style='text-align: center;'>🏆 All-Time Leaderboard</h2>", unsafe_allow_html=True)
 df_all_time = user_data.sort_values(by="total_votes", ascending=False).head(5)
