@@ -22,18 +22,30 @@ except Exception as e:
 def get_players():
     """Fetches all players from Supabase and returns a DataFrame."""
     response = supabase.table("players").select("*").execute()
+    
+    # Debugging
+    st.write("Raw response:", response)  # Prints the raw response
+    st.write("Data:", response.data)  # Prints just the data part
+    
     data = response.data
 
-    if not data:
-        st.error("❌ No player data found in Supabase! Ensure the table is populated.")
-        return pd.DataFrame(columns=["name", "elo", "image_url", "team", "pos", "Pos Rank", "3/4 elo","Votes" , "Trend"])
+    if not isinstance(data, list):  # Ensure it's a list before making a DataFrame
+        st.error("❌ Unexpected data format! Supabase response is not a list.")
+        return pd.DataFrame()
 
-    df = pd.DataFrame(data)
-    df["elo"] = df["elo"].astype(float)
-    df["votes"] = df["votes"].astype(int)
-    df["pos_rank"] = df["pos_rank"].astype(int)
+    if not data:  # If list is empty
+        st.error("❌ No player data found in Supabase! Ensure the table is populated.")
+        return pd.DataFrame(columns=["name", "elo", "image_url", "team", "pos", "Pos Rank", "3/4 elo", "Votes", "Trend"])
+
+    df = pd.DataFrame(data)  # Convert to DataFrame
     
+    # Ensure correct data types
+    df["elo"] = pd.to_numeric(df["elo"], errors="coerce")
+    df["votes"] = pd.to_numeric(df["votes"], errors="coerce")
+    df["pos_rank"] = pd.to_numeric(df["pos_rank"], errors="coerce")
+
     return df
+
 
 
 
