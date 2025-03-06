@@ -266,41 +266,37 @@ def display_player(player, col, matchup_id):
             unsafe_allow_html=True
         )
 
-        # ✅ Check if this player was selected
+        # ✅ Determine if this player was selected
         is_selected = st.session_state.get("selected_player") == player["name"]
-        
-        # ✅ Apply green background if selected, otherwise default
-        button_style = """
+
+        # ✅ Define button style (Green if selected, Default otherwise)
+        button_style = (
+            "background-color: #28a745; color: white; border: 2px solid #1e7e34;"
+            if is_selected
+            else "background-color: #f0f2f6; color: black; border: 1px solid #d1d5db;"
+        )
+
+        # ✅ Create a button with custom style
+        if st.markdown(
+            f"""
             <style>
-                div[data-testid="stButton"] button {
-                    background-color: #f0f2f6;  /* Default button color */
-                    color: black;
-                    border: 1px solid #d1d5db;
-                }
-                div[data-testid="stButton"] button:hover {
-                    background-color: #e2e8f0;
-                }
+                .selected-button {{
+                    {button_style}
+                    padding: 10px;
+                    width: 100%;
+                    text-align: center;
+                    display: block;
+                    border-radius: 5px;
+                    cursor: pointer;
+                }}
+                .selected-button:hover {{
+                    filter: brightness(90%);
+                }}
             </style>
-        """
-
-        # ✅ Override style if player is selected
-        if is_selected:
-            button_style = """
-                <style>
-                    div[data-testid="stButton"] button {
-                        background-color: #28a745 !important;  /* Green */
-                        color: white !important;
-                        border: 1px solid #1e7e34;
-                    }
-                </style>
-            """
-
-        # ✅ Inject CSS
-        st.markdown(button_style, unsafe_allow_html=True)
-
-        # ✅ Create button
-        if st.button(f"{player['name']} ({player['team']} | {player['pos']})", use_container_width=True):
-            # ✅ Prevent clicking without a username
+            <button class="selected-button">{player['name']} ({player['team']} | {player['pos']})</button>
+            """,
+            unsafe_allow_html=True,
+        ):
             if "username" not in st.session_state or not st.session_state["username"].strip():
                 st.warning("⚠️ Please input a username before making a pick! It can be anything!")
             else:
@@ -310,23 +306,23 @@ def display_player(player, col, matchup_id):
 
                     update_player_elo(winner["name"], new_winner_elo, loser["name"], new_loser_elo)
                     if not st.session_state.get("vote_processed", False):  
-                        update_user_vote(st.session_state["username"])  # ✅ Only update if username exists
-                        st.session_state["vote_processed"] = True  # ✅ Prevent extra votes
+                        update_user_vote(st.session_state["username"])  
+                        st.session_state["vote_processed"] = True  
 
-                    # ✅ Store selected player
+                    # ✅ Track selected player
                     st.session_state["selected_player"] = player["name"]
 
-                    # ✅ Track that this matchup has been voted on
+                    # ✅ Prevent multiple votes
                     st.session_state["last_voted_matchup"] = matchup_id
-                    st.session_state["vote_registered"] = True  # ✅ Prevent further votes until reset
+                    st.session_state["vote_registered"] = True  
 
                     st.session_state["updated_elo"] = {
                         winner["name"]: new_winner_elo,
                         loser["name"]: new_loser_elo
                     }
-                    st.session_state["selected_player"] = player["name"]
-                else:
-                    st.warning("⚠️ You already voted! Click 'Next Matchup' to vote again.")
+                    
+                    # ✅ Rerun app to update button styling
+                    st.rerun()
 
 
 # ✅ Now call the function AFTER it's defined
@@ -366,40 +362,39 @@ if "selected_player" in st.session_state and st.session_state["selected_player"]
 
     # 🎯 **Next Matchup Button**
     if st.button("Next Matchup", use_container_width=True):
-        # ✅ Reset vote tracking for the new matchup
+        # ✅ Reset vote tracking
         st.session_state["last_voted_matchup"] = None  
         st.session_state["vote_processed"] = False  
+        st.session_state["selected_player"] = None  # ✅ Reset selected player
         
-        # ✅ Always use the stored position filter for Player 1
+        # ✅ Load new players
         filtered_players_df = players_df if st.session_state.get("selected_position") is None else players_df[
             players_df["pos"].isin(st.session_state["selected_position"])
         ]
-        
-        # ✅ Select Player 1 from the filtered list
+    
         st.session_state["player1"] = aggressive_weighted_selection(filtered_players_df)
-
-        
-        # ✅ Keep selecting Player 2 until it's different from Player 1
+    
         while True:
-            st.session_state["player2_candidates"] = players_df[
-                (players_df["elo"] > st.session_state["player1"]["elo"] - 100) & 
-                (players_df["elo"] < st.session_state["player1"]["elo"] + 100) & 
-                (players_df["pos"].isin(st.session_state["selected_position"]))  # ✅ Ensure same position
+            st.session_state["player2_candidates"] = filtered_players_df[
+                (filtered_players_df["elo"] > st.session_state["player1"]["elo"] - 100) & 
+                (filtered_players_df["elo"] < st.session_state["player1"]["elo"] + 100) & 
+                (filtered_players_df["pos"].isin(st.session_state["selected_position"]))
             ]
-
-            st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(players_df)
-        
+    
+            st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(filtered_players_df)
+    
             if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
                 break  # ✅ Ensure players are different
-        
+    
         # ✅ Reset Elo tracking
         st.session_state["initial_elo"] = {
             st.session_state["player1"]["name"]: st.session_state["player1"]["elo"],
             st.session_state["player2"]["name"]: st.session_state["player2"]["elo"]
         }
-        st.session_state["selected_player"] = None
         
+        st.session_state["selected_player"] = None  # ✅ Reset selection
         st.rerun()
+
 
 
 # 🎯 **Always Show Leaderboards at the Bottom**
