@@ -93,7 +93,7 @@ def aggressive_weighted_selection(df, weight_col="elo", alpha=4):
     if df.empty:
         raise ValueError("⚠️ No valid players available for selection!")
 
-    df["normalized_elo"] = (df[weight_col] - df[weight_col].min()) / (df[weight_col].max() - df[weight_col"].min() + 1e-9)  # ✅ Prevent division by zero
+    df["normalized_elo"] = (df[weight_col] - df[weight_col].min()) / (df[weight_col].max() - df[weight_col"].min() + 1e-9)
     df["weight"] = df["normalized_elo"] ** alpha
     df["weight"] /= df["weight"].sum()
 
