@@ -135,8 +135,8 @@ else:
     
     # ✅ Preserve the selected position filter across reruns
     if "selected_position" not in st.session_state:
-        st.session_state["selected_position"] = None  # Default to all positions
-    
+        st.session_state["selected_position"] = list(position_options["All Positions"])  # Default to all positions
+
     selected_position = st.selectbox(
         "Select Position Filter", 
         list(position_options.keys()), 
@@ -174,8 +174,9 @@ else:
             st.session_state["player2_candidates"] = filtered_players_df[
                 (filtered_players_df["elo"] > st.session_state["player1"]["elo"] - 100) & 
                 (filtered_players_df["elo"] < st.session_state["player1"]["elo"] + 100) & 
-                (filtered_players_df["pos"].isin(st.session_state["selected_position"])) # ✅ Ensure same position
+                (filtered_players_df["pos"].isin(st.session_state.get("selected_position", players_df["pos"].unique())))
             ]
+
         
             # ✅ Ensure a valid Player 2 exists
             if st.session_state["player2_candidates"].empty:
@@ -212,8 +213,9 @@ else:
             st.session_state["player2_candidates"] = filtered_players_df[
                 (filtered_players_df["elo"] > st.session_state["player1"]["elo"] - 100) & 
                 (filtered_players_df["elo"] < st.session_state["player1"]["elo"] + 100) & 
-                (filtered_players_df["pos"].isin(st.session_state["selected_position"]))  # ✅ Ensure same position
+                (filtered_players_df["pos"].isin(st.session_state.get("selected_position", players_df["pos"].unique())))
             ]
+
         
             # ✅ Ensure a valid Player 2 exists
             if st.session_state["player2_candidates"].empty:
