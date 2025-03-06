@@ -144,8 +144,18 @@ else:
 
     def display_player(player, col, matchup_id):
         with col:
-            st.image(player["image_url"] if player["image_url"] else DEFAULT_IMAGE, width=200)
-            if st.button(player["name"], use_container_width=True):
+            # ✅ Center image using HTML & CSS
+            st.markdown(
+                f"""
+                <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                    <img src="{player['image_url'] if player['image_url'] else DEFAULT_IMAGE}" width="200" style="border-radius: 10px;">
+                    <div style="margin-top: 10px;">
+                        {st.button(player["name"], use_container_width=True)}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
                 if st.session_state.get("last_voted_matchup") != matchup_id and not st.session_state.get("vote_processed", False):  
                     winner, loser = (player1, player2) if player["name"] == player1["name"] else (player2, player1)
                     new_winner_elo, new_loser_elo = calculate_elo(winner["elo"], loser["elo"])
