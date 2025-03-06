@@ -266,7 +266,39 @@ def display_player(player, col, matchup_id):
             unsafe_allow_html=True
         )
 
-        # ✅ Button with player name + (Team | Pos)
+        # ✅ Check if this player was selected
+        is_selected = st.session_state.get("selected_player") == player["name"]
+        
+        # ✅ Apply green background if selected, otherwise default
+        button_style = """
+            <style>
+                div[data-testid="stButton"] button {
+                    background-color: #f0f2f6;  /* Default button color */
+                    color: black;
+                    border: 1px solid #d1d5db;
+                }
+                div[data-testid="stButton"] button:hover {
+                    background-color: #e2e8f0;
+                }
+            </style>
+        """
+
+        # ✅ Override style if player is selected
+        if is_selected:
+            button_style = """
+                <style>
+                    div[data-testid="stButton"] button {
+                        background-color: #28a745 !important;  /* Green */
+                        color: white !important;
+                        border: 1px solid #1e7e34;
+                    }
+                </style>
+            """
+
+        # ✅ Inject CSS
+        st.markdown(button_style, unsafe_allow_html=True)
+
+        # ✅ Create button
         if st.button(f"{player['name']} ({player['team']} | {player['pos']})", use_container_width=True):
             # ✅ Prevent clicking without a username
             if "username" not in st.session_state or not st.session_state["username"].strip():
@@ -280,6 +312,9 @@ def display_player(player, col, matchup_id):
                     if not st.session_state.get("vote_processed", False):  
                         update_user_vote(st.session_state["username"])  # ✅ Only update if username exists
                         st.session_state["vote_processed"] = True  # ✅ Prevent extra votes
+
+                    # ✅ Store selected player
+                    st.session_state["selected_player"] = player["name"]
 
                     # ✅ Track that this matchup has been voted on
                     st.session_state["last_voted_matchup"] = matchup_id
