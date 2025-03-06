@@ -122,12 +122,32 @@ else:
     
     selected_position = st.selectbox("Select Position Filter", list(position_options.keys()), index=0)
     
-    # ✅ Check if selection has changed
     if "selected_position" not in st.session_state or st.session_state["selected_position"] != position_options[selected_position]:
         st.session_state["selected_position"] = position_options[selected_position]
-        st.session_state["player1"] = None  # Reset matchup
-        st.session_state["player2"] = None
-        st.rerun()  # ✅ Force a rerun when position changes
+        
+        # ✅ Filter players based on the new position selection
+        filtered_players_df = players_df if st.session_state["selected_position"] is None else players_df[players_df["pos"].isin(st.session_state["selected_position"])]
+    
+        # ✅ Ensure there are enough players
+        if filtered_players_df.empty:
+            st.warning("⚠️ No players available for the selected position filter. Showing all positions instead.")
+            filtered_players_df = players_df  # Default to all positions
+        
+        # ✅ Assign new players
+        st.session_state["player1"] = aggressive_weighted_selection(filtered_players_df)
+        
+        while True:
+            st.session_state["player2_candidates"] = filtered_players_df[
+                (filtered_players_df["elo"] > st.session_state["player1"]["elo"] - 50) & 
+                (filtered_players_df["elo"] < st.session_state["player1"]["elo"] + 50)
+            ]
+            st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(filtered_players_df)
+    
+            if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
+                break  # ✅ Ensure players are different
+    
+        st.rerun()  # ✅ Force a full update to apply the new selection
+
 
 
     # 🎯 **Matchup Selection Logic**
@@ -160,8 +180,12 @@ else:
     player1 = st.session_state["player1"]
     player2 = st.session_state["player2"]
     
-    # ✅ Generate a unique ID for the matchup
-    matchup_id = f"{player1['name']}_vs_{player2['name']}"
+    # ✅ Ensure players are selected before generating a matchup ID
+    if "player1" not in st.session_state or "player2" not in st.session_state or st.session_state["player1"] is None or st.session_state["player2"] is None:
+        st.warning("⚠️ Players not selected yet. Please select a position filter or refresh.")
+        st.stop()  # ✅ Prevent further execution if no players are available
+    
+    matchup_id = f"{st.session_state['player1']['name']}_vs_{st.session_state['player2']['name']}"
 
 
     # 🎯 **Store Initial Elo Ratings**
