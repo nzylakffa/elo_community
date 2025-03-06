@@ -133,27 +133,50 @@ else:
         "Only D/ST": ["D/ST"]
     }
     
-    selected_position = st.selectbox("Select Position Filter", list(position_options.keys()), index=0)
+    selected_position = st.selectbox(
+        "Select Position Filter", 
+        list(position_options.keys()), 
+        index=list(position_options.keys()).index(st.session_state.get("selected_position_label", "All Positions"))
+    )
+    
+    # ✅ Store both the label and actual position list
+    if "selected_position" not in st.session_state or st.session_state["selected_position_label"] != selected_position:
+        st.session_state["selected_position_label"] = selected_position  # Save label for reruns
+        st.session_state["selected_position"] = position_options[selected_position]  # Save filtered positions
+        st.rerun()  # ✅ Force a full update when position changes
+
+
+
+
+
     
     if "selected_position" not in st.session_state or st.session_state["selected_position"] != position_options[selected_position]:
         st.session_state["selected_position"] = position_options[selected_position]
         
         # ✅ Filter players based on the new position selection
-        filtered_players_df = players_df if st.session_state["selected_position"] is None else players_df[players_df["pos"].isin(st.session_state["selected_position"])]
+        filtered_players_df = players_df if st.session_state.get("selected_position") is None else players_df[
+            players_df["pos"].isin(st.session_state["selected_position"])
+        ]
     
         # ✅ Ensure there are enough players
         if filtered_players_df.empty:
             st.warning("⚠️ No players available for the selected position filter. Showing all positions instead.")
             filtered_players_df = players_df  # Default to all positions
         
-        # ✅ Assign new players
+        # ✅ Always use the stored position filter for Player 1
+        filtered_players_df = players_df if st.session_state["selected_position"] is None else players_df[
+            players_df["pos"].isin(st.session_state["selected_position"])
+        ]
+        
+        # ✅ Select Player 1 from the filtered list
         st.session_state["player1"] = aggressive_weighted_selection(filtered_players_df)
+
         
         while True:
             st.session_state["player2_candidates"] = filtered_players_df[
                 (filtered_players_df["elo"] > st.session_state["player1"]["elo"] - 100) & 
                 (filtered_players_df["elo"] < st.session_state["player1"]["elo"] + 100) & 
-                (filtered_players_df["pos"] == st.session_state["player1"]["pos"])  # ✅ Ensure same position
+                (filtered_players_df["pos"].isin(st.session_state["selected_position"])) # ✅ Ensure same position
             ]
         
             # ✅ Ensure a valid Player 2 exists
