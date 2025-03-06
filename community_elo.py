@@ -126,6 +126,9 @@ else:
 
     player1 = st.session_state["player1"]
     player2 = st.session_state["player2"]
+    # ✅ Generate a unique ID for the matchup
+    matchup_id = f"{player1['name']}_vs_{player2['name']}"
+
 
     # 🎯 **Store Initial Elo Ratings**
     if "initial_elo" not in st.session_state:
@@ -137,7 +140,7 @@ else:
     st.markdown("<h1 style='text-align: center;'>Who Would You Rather Draft?</h1>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
 
-    def display_player(player, col):
+    def display_player(player, col, matchup_id):
         with col:
             st.image(player["image_url"] if player["image_url"] else DEFAULT_IMAGE, width=200)
             if st.button(player["name"], use_container_width=True):
@@ -160,8 +163,8 @@ else:
                 else:
                     st.warning("⚠️ You already voted! Click 'Next Matchup' to vote again.")
 
-    display_player(player1, col1)
-    display_player(player2, col2)
+    display_player(player1, col1, matchup_id)
+    display_player(player2, col2, matchup_id)
 
     # 🎯 **Show Elo Update**
     if "selected_player" in st.session_state and st.session_state["selected_player"]:
