@@ -243,17 +243,3 @@ if st.button("Next Matchup", use_container_width=True):
         status.update(label="✅ Next Matchup Ready!", state="complete")
 
     st.rerun()
-
-
-        # ✅ Reset Elo tracking
-        st.session_state["initial_elo"] = {
-            st.session_state["player1"]["name"]: st.session_state["player1"]["elo"],
-            st.session_state["player2"]["name"]: st.session_state["player2"]["elo"]
-        }
-        st.session_state["selected_player"] = None
-        st.session_state["updated_elo"] = {}
-
-        status.update(label="✅ Next Matchup Ready!", state="complete")
-
-    # ✅ Force page refresh
-    st.rerun()
