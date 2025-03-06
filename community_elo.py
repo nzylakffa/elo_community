@@ -5,28 +5,34 @@ import numpy as np
 import random
 import datetime
 
-# 🔧 Remove Streamlit container background & borders
+# 🔧 Remove Streamlit container background, margins & borders
 st.markdown("""
     <style>
-        /* Remove the outer box */
+        /* Remove padding and margin from the main container */
         .block-container {
-            padding-top: 0px;
-            padding-bottom: 0px;
-            padding-left: 0px;
-            padding-right: 0px;
+            padding: 0px !important;
+            margin: 0px !important;
         }
 
-        /* Remove the background color */
+        /* Remove background color */
         .main {
             background-color: transparent !important;
         }
 
-        /* Remove any borders */
-        section[data-testid="stSidebar"] {
+        /* Remove shadow and border */
+        div[data-testid="stAppViewBlockContainer"] {
+            background: transparent !important;
             border: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Remove the rounded corner effect */
+        div[data-testid="stVerticalBlock"] {
+            border-radius: 0px !important;
         }
     </style>
 """, unsafe_allow_html=True)
+
 
 
 # 🔧 Supabase Setup
