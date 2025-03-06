@@ -297,9 +297,14 @@ display_player(player2, col2, matchup_id)
 # 🎯 **Show Elo Update**
 if "selected_player" in st.session_state and st.session_state["selected_player"]:
     st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: left;'>FFA Community Elo Ratings</h3>", unsafe_allow_html=True)
 
-    for player in [player1, player2]:
+    # ✅ Center the header
+    st.markdown("<h3 style='text-align: center;'>FFA Community Elo Ratings</h3>", unsafe_allow_html=True)
+
+    # ✅ Sort players by Elo (highest first)
+    sorted_players = sorted([player1, player2], key=lambda x: st.session_state["updated_elo"][x["name"]], reverse=True)
+
+    for player in sorted_players:  # ✅ Now higher Elo always appears first
         # ✅ Determine background highlight if selected
         background_color = "yellow" if player["name"] == st.session_state["selected_player"] else "transparent"
 
