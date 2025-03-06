@@ -104,33 +104,31 @@ else:
     # 🎯 **Username Input**
     st.markdown("<h3 style='text-align: center;'>📝 Add a Username to Compete on the Leaderboard!</h3>", unsafe_allow_html=True)
     username = st.text_input("Enter Username", value=st.session_state.get("username", "").lower(), max_chars=15)
-    
-    if username:
-        st.session_state["username"] = username.lower()  # ✅ Store as lowercase
-        update_user_vote(st.session_state["username"])
 
     if username:
-        st.session_state["username"] = username.lower()
-        update_user_vote(username)
+        st.session_state["username"] = username.lower()  # ✅ Store as lowercase
+        update_user_vote(st.session_state["username"])  # ✅ Track the vote
 
     # 🎯 **Matchup Selection Logic**
     if "player1" not in st.session_state or "player2" not in st.session_state:
-        st.session_state.player1 = aggressive_weighted_selection(players_df)
-        st.session_state.player2_candidates = players_df[
-            (players_df["elo"] > st.session_state.player1["elo"] - 50) & (players_df["elo"] < st.session_state.player1["elo"] + 50)
-        ]
-        st.session_state.player2 = aggressive_weighted_selection(st.session_state.player2_candidates) if not st.session_state.player2_candidates.empty else aggressive_weighted_selection(players_df)
+        while True:
+            st.session_state["player1"] = aggressive_weighted_selection(players_df)
+            st.session_state["player2_candidates"] = players_df[
+                (players_df["elo"] > st.session_state["player1"]["elo"] - 50) & (players_df["elo"] < st.session_state["player1"]["elo"] + 50)
+            ]
+            st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(players_df)
 
-    player1 = st.session_state.player1
-    player2 = st.session_state.player2
+            if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
+                break  # ✅ Ensure different players
+
+    player1 = st.session_state["player1"]
+    player2 = st.session_state["player2"]
 
     # 🎯 **Store Initial Elo Ratings**
     if "initial_elo" not in st.session_state:
         st.session_state["initial_elo"] = {}
-    if player1["name"] not in st.session_state["initial_elo"]:
-        st.session_state["initial_elo"][player1["name"]] = player1["elo"]
-    if player2["name"] not in st.session_state["initial_elo"]:
-        st.session_state["initial_elo"][player2["name"]] = player2["elo"]
+    st.session_state["initial_elo"][player1["name"]] = player1["elo"]
+    st.session_state["initial_elo"][player2["name"]] = player2["elo"]
 
     # 🎯 **Matchup Display**
     st.markdown("<h1 style='text-align: center;'>Who Would You Rather Draft?</h1>", unsafe_allow_html=True)
@@ -141,26 +139,20 @@ else:
             st.image(player["image_url"] if player["image_url"] else DEFAULT_IMAGE, width=200)
             if st.button(player["name"], use_container_width=True):
                 if not st.session_state.get("vote_registered", False):  # ✅ Prevent multiple votes
-                    if player["name"] == player1["name"]:
-                        new_winner_elo, new_loser_elo = calculate_elo(player1["elo"], player2["elo"])
-                        update_player_elo(player1["name"], new_winner_elo, player2["name"], new_loser_elo)
-                    else:
-                        new_winner_elo, new_loser_elo = calculate_elo(player2["elo"], player1["elo"])
-                        update_player_elo(player2["name"], new_winner_elo, player1["name"], new_loser_elo)
-            
+                    winner, loser = (player1, player2) if player["name"] == player1["name"] else (player2, player1)
+                    new_winner_elo, new_loser_elo = calculate_elo(winner["elo"], loser["elo"])
+
+                    update_player_elo(winner["name"], new_winner_elo, loser["name"], new_loser_elo)
                     update_user_vote(st.session_state["username"])  # ✅ Only counts once
                     st.session_state["vote_registered"] = True  # ✅ Prevent further votes until reset
-            
+
                     st.session_state["updated_elo"] = {
-                        player1["name"]: new_winner_elo if player1["name"] == player["name"] else new_loser_elo,
-                        player2["name"]: new_winner_elo if player2["name"] == player["name"] else new_loser_elo
+                        winner["name"]: new_winner_elo,
+                        loser["name"]: new_loser_elo
                     }
                     st.session_state["selected_player"] = player["name"]
                 else:
                     st.warning("⚠️ You already voted! Click 'Next Matchup' to vote again.")
-
-
-
 
     display_player(player1, col1)
     display_player(player2, col2)
@@ -173,66 +165,57 @@ else:
         for player in [player1, player2]:
             color = "yellow" if player["name"] == st.session_state["selected_player"] else "transparent"
             change = st.session_state["updated_elo"][player["name"]] - st.session_state["initial_elo"][player["name"]]
-            st.markdown(f"<div style='background-color:{color}; padding: 10px; border-radius: 5px; text-align: center;'><b>{player['name']}</b>: {st.session_state['updated_elo'][player['name']]} ELO ({change:+})</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='background-color:{color}; padding: 10px; border-radius: 5px; text-align: center;'>"
+                        f"<b>{player['name']}</b>: {st.session_state['updated_elo'][player['name']]} ELO ({change:+})"
+                        f"</div>", unsafe_allow_html=True)
 
-# 🎯 **Next Matchup Button**
-if st.button("Next Matchup", use_container_width=True):
-    st.session_state["vote_registered"] = False  # ✅ Reset vote tracking
+    # 🎯 **Next Matchup Button**
+    if st.button("Next Matchup", use_container_width=True):
+        st.session_state["vote_registered"] = False  # ✅ Reset vote tracking
 
-    # ✅ Select new Player 1
-    st.session_state["player1"] = aggressive_weighted_selection(players_df)
+        while True:
+            st.session_state["player1"] = aggressive_weighted_selection(players_df)
+            st.session_state["player2_candidates"] = players_df[
+                (players_df["elo"] > st.session_state["player1"]["elo"] - 50) & 
+                (players_df["elo"] < st.session_state["player1"]["elo"] + 50)
+            ]
+            st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(players_df)
 
-    # ✅ Keep selecting Player 2 until different
-    while True:
-        st.session_state["player2_candidates"] = players_df[
-            (players_df["elo"] > st.session_state["player1"]["elo"] - 50) & 
-            (players_df["elo"] < st.session_state["player1"]["elo"] + 50)
-        ]
-        st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(players_df)
+            if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
+                break  # ✅ Ensure players are different
 
-        if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
-            break  # ✅ Ensure players are different
+        st.session_state["initial_elo"] = {
+            st.session_state["player1"]["name"]: st.session_state["player1"]["elo"],
+            st.session_state["player2"]["name"]: st.session_state["player2"]["elo"]
+        }
+        st.session_state["selected_player"] = None
+        st.rerun()
 
-    # ✅ Reset Elo tracking
-    st.session_state["initial_elo"] = {
-        st.session_state["player1"]["name"]: st.session_state["player1"]["elo"],
-        st.session_state["player2"]["name"]: st.session_state["player2"]["elo"]
-    }
-    st.session_state["selected_player"] = None
-    
+# 🎯 **Always Show Leaderboards at the Bottom**
+user_data = get_user_data()
+user_data["username"] = user_data["username"].str.lower()
+user_data = user_data.groupby("username", as_index=False).agg({
+    "total_votes": "sum",
+    "weekly_votes": "sum",
+    "last_voted": "max"
+})
 
-    # 🎯 **Fetch User Data for Leaderboards**
-    user_data = get_user_data()
-    
-    # ✅ Convert all usernames to lowercase
-    user_data["username"] = user_data["username"].str.lower()
-    
-    # ✅ Merge duplicate usernames (sum votes)
-    user_data = user_data.groupby("username", as_index=False).agg({
-        "total_votes": "sum",
-        "weekly_votes": "sum",
-        "last_voted": "max"  # Keep the most recent vote date
-    })
+# ✅ Ensure columns are numeric before sorting
+user_data["total_votes"] = pd.to_numeric(user_data["total_votes"], errors="coerce").fillna(0).astype(int)
+user_data["weekly_votes"] = pd.to_numeric(user_data["weekly_votes"], errors="coerce").fillna(0).astype(int)
 
-    # Ensure columns are numeric before sorting
-    user_data["total_votes"] = pd.to_numeric(user_data["total_votes"], errors="coerce").fillna(0).astype(int)
-    user_data["weekly_votes"] = pd.to_numeric(user_data["weekly_votes"], errors="coerce").fillna(0).astype(int)
+# 🎖️ **All-Time Leaderboard**
+st.markdown("<h2 style='text-align: center;'>🏆 All-Time Leaderboard</h2>", unsafe_allow_html=True)
+df_all_time = user_data.sort_values(by="total_votes", ascending=False).head(5)
+df_all_time["Rank"] = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"][: len(df_all_time)]
+df_all_time = df_all_time.rename(columns={"username": "Username", "total_votes": "Total Votes", "last_voted": "Last Voted"})
+df_all_time = df_all_time[["Rank", "Username", "Total Votes", "Last Voted"]]
+st.dataframe(df_all_time.set_index("Rank"), hide_index=False, use_container_width=True)
 
-    # 🎖️ **All-Time Leaderboard**
-    st.markdown("<h2 style='text-align: center;'>🏆 All-Time Leaderboard</h2>", unsafe_allow_html=True)
-    df_all_time = user_data.sort_values(by="total_votes", ascending=False).head(5)
-    df_all_time["Rank"] = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"][: len(df_all_time)]
-    df_all_time = df_all_time.rename(columns={"username": "Username", "total_votes": "Total Votes", "last_voted": "Last Voted"})
-    df_all_time = df_all_time[["Rank", "Username", "Total Votes", "Last Voted"]]
-    st.dataframe(df_all_time.set_index("Rank"), hide_index=False, use_container_width=True)
-
-    # ⏳ **Weekly Leaderboard**
-    st.markdown("<h2 style='text-align: center;'>⏳ Weekly Leaderboard</h2>", unsafe_allow_html=True)
-    df_weekly = user_data.sort_values(by="weekly_votes", ascending=False).head(5)
-    df_weekly["Rank"] = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"][: len(df_weekly)]
-    df_weekly = df_weekly.rename(columns={"username": "Username", "weekly_votes": "Weekly Votes", "last_voted": "Last Voted"})
-    df_weekly = df_weekly[["Rank", "Username", "Weekly Votes", "Last Voted"]]
-    st.dataframe(df_weekly.set_index("Rank"), hide_index=False, use_container_width=True)
-    st.session_state["updated_elo"] = {}
-
-    st.rerun()
+# ⏳ **Weekly Leaderboard**
+st.markdown("<h2 style='text-align: center;'>⏳ Weekly Leaderboard</h2>", unsafe_allow_html=True)
+df_weekly = user_data.sort_values(by="weekly_votes", ascending=False).head(5)
+df_weekly["Rank"] = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"][: len(df_weekly)]
+df_weekly = df_weekly.rename(columns={"username": "Username", "weekly_votes": "Weekly Votes", "last_voted": "Last Voted"})
+df_weekly = df_weekly[["Rank", "Username", "Weekly Votes", "Last Voted"]]
+st.dataframe(df_weekly.set_index("Rank"), hide_index=False, use_container_width=True)
