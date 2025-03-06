@@ -144,9 +144,7 @@ else:
         with col:
             st.image(player["image_url"] if player["image_url"] else DEFAULT_IMAGE, width=200)
             if st.button(player["name"], use_container_width=True):
-                if not st.session_state.get("username"):  # Check if username is empty
-                    st.error("❌ Please input a username before making a pick! It can be anything!")
-                else:
+                if not st.session_state.get("vote_registered", False):  # ✅ Prevent multiple votes
                     if player["name"] == player1["name"]:
                         new_winner_elo, new_loser_elo = calculate_elo(player1["elo"], player2["elo"])
                         update_player_elo(player1["name"], new_winner_elo, player2["name"], new_loser_elo)
@@ -154,12 +152,17 @@ else:
                         new_winner_elo, new_loser_elo = calculate_elo(player2["elo"], player1["elo"])
                         update_player_elo(player2["name"], new_winner_elo, player1["name"], new_loser_elo)
             
-                    update_user_vote(st.session_state["username"])
+                    update_user_vote(st.session_state["username"])  # ✅ Only counts once
+                    st.session_state["vote_registered"] = True  # ✅ Prevent further votes until reset
+            
                     st.session_state["updated_elo"] = {
                         player1["name"]: new_winner_elo if player1["name"] == player["name"] else new_loser_elo,
                         player2["name"]: new_winner_elo if player2["name"] == player["name"] else new_loser_elo
                     }
                     st.session_state["selected_player"] = player["name"]
+                else:
+                    st.warning("⚠️ You already voted! Click 'Next Matchup' to vote again.")
+
 
 
 
@@ -210,26 +213,36 @@ else:
     st.dataframe(df_weekly.set_index("Rank"), hide_index=False, use_container_width=True)
 
 
-    # 🎯 **Next Matchup Button**
+# 🎯 **Next Matchup Button**
 if st.button("Next Matchup", use_container_width=True):
+    st.session_state["vote_registered"] = False  # ✅ Reset vote tracking
+
     with st.status("Loading next matchup... ⏳", expanded=False) as status:
-        # ✅ Select new Player 1 from weighted selection
-        # Select Player 1
+        # ✅ Select new Player 1
         st.session_state["player1"] = aggressive_weighted_selection(players_df)
-        
-        # Keep selecting Player 2 until it's different from Player 1
+
+        # ✅ Keep selecting Player 2 until different
         while True:
             st.session_state["player2_candidates"] = players_df[
                 (players_df["elo"] > st.session_state["player1"]["elo"] - 50) & 
                 (players_df["elo"] < st.session_state["player1"]["elo"] + 50)
             ]
-            
-            # If no candidates, pick randomly again
             st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(players_df)
-        
-            # Break the loop if Player 2 is different from Player 1
+
             if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
-                break
+                break  # ✅ Ensure players are different
+
+        # ✅ Reset Elo tracking
+        st.session_state["initial_elo"] = {
+            st.session_state["player1"]["name"]: st.session_state["player1"]["elo"],
+            st.session_state["player2"]["name"]: st.session_state["player2"]["elo"]
+        }
+        st.session_state["selected_player"] = None
+        st.session_state["updated_elo"] = {}
+
+        status.update(label="✅ Next Matchup Ready!", state="complete")
+
+    st.rerun()
 
 
         # ✅ Reset Elo tracking
