@@ -83,10 +83,6 @@ def calculate_elo(winner_elo, loser_elo, k=24):
     new_winner_elo = winner_elo + k * (1 - expected_winner)
     new_loser_elo = loser_elo + k * (0 - expected_loser)
 
-    # Debugging output
-    st.write(f"Winner Elo Before: {winner_elo}, Loser Elo Before: {loser_elo}")
-    st.write(f"Winner Elo After: {round(new_winner_elo)}, Loser Elo After: {round(new_loser_elo)}")
-
     return round(new_winner_elo), round(new_loser_elo)
 
 
