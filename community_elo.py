@@ -150,10 +150,12 @@ else:
         st.session_state["player1"] = aggressive_weighted_selection(filtered_players_df)
         
         while True:
-            st.session_state["player2_candidates"] = filtered_players_df[
-                (filtered_players_df["elo"] > st.session_state["player1"]["elo"] - 100) & 
-                (filtered_players_df["elo"] < st.session_state["player1"]["elo"] + 100)
-            ]
+                st.session_state["player2_candidates"] = filtered_players_df[
+                    (filtered_players_df["elo"] > st.session_state["player1"]["elo"] - 100) & 
+                    (filtered_players_df["elo"] < st.session_state["player1"]["elo"] + 100) & 
+                    (filtered_players_df["pos"] == st.session_state["player1"]["pos"])  # ✅ Ensure same position
+                ]
+
             # ✅ Ensure there are valid candidates before selecting Player 2
             if st.session_state["player2_candidates"].empty:
                 st.warning("⚠️ Not enough players for the selected position filter. Defaulting to all positions.")
@@ -189,7 +191,11 @@ else:
                 (filtered_players_df["elo"] > st.session_state["player1"]["elo"] - 50) & 
                 (filtered_players_df["elo"] < st.session_state["player1"]["elo"] + 50)
             ]
-            st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(filtered_players_df)
+            if st.session_state["player2_candidates"].empty:
+                st.warning("⚠️ Not enough valid matchups within the Elo range. Selecting another player from the same position.")
+                st.session_state["player2"] = aggressive_weighted_selection(filtered_players_df)  # ✅ Fallback to same position pool
+            else:
+                st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"])
         
             if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
                 break  # ✅ Ensure players are different
