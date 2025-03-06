@@ -24,7 +24,6 @@ def get_players():
     df["elo"] = pd.to_numeric(df["elo"], errors="coerce")
     df["Votes"] = pd.to_numeric(df["Votes"], errors="coerce")
     df["pos_rank"] = df.groupby("pos")["elo"].rank(method="min", ascending=False).astype(int)
-
     return df
 
 ### ✅ **Fetch User Vote Data**
@@ -148,6 +147,30 @@ else:
             color = "yellow" if player["name"] == st.session_state["selected_player"] else "transparent"
             change = st.session_state["updated_elo"][player["name"]] - st.session_state["initial_elo"][player["name"]]
             st.markdown(f"<div style='background-color:{color}; padding: 10px; border-radius: 5px; text-align: center;'><b>{player['name']}</b>: {st.session_state['updated_elo'][player['name']]} ELO ({change:+})</div>", unsafe_allow_html=True)
+
+        # 🎯 **Fetch User Data for Leaderboards**
+    user_data = get_user_data()
+
+    # Ensure columns are numeric before sorting
+    user_data["total_votes"] = pd.to_numeric(user_data["total_votes"], errors="coerce").fillna(0).astype(int)
+    user_data["weekly_votes"] = pd.to_numeric(user_data["weekly_votes"], errors="coerce").fillna(0).astype(int)
+
+    # 🎖️ **All-Time Leaderboard**
+    st.markdown("<h2 style='text-align: center;'>🏆 All-Time Leaderboard</h2>", unsafe_allow_html=True)
+    df_all_time = user_data.sort_values(by="total_votes", ascending=False).head(5)
+    df_all_time["Rank"] = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"][: len(df_all_time)]
+    df_all_time = df_all_time.rename(columns={"username": "Username", "total_votes": "Total Votes", "last_voted": "Last Voted"})
+    df_all_time = df_all_time[["Rank", "Username", "Total Votes", "Last Voted"]]
+    st.dataframe(df_all_time.set_index("Rank"), hide_index=False, use_container_width=True)
+
+    # ⏳ **Weekly Leaderboard**
+    st.markdown("<h2 style='text-align: center;'>⏳ Weekly Leaderboard</h2>", unsafe_allow_html=True)
+    df_weekly = user_data.sort_values(by="weekly_votes", ascending=False).head(5)
+    df_weekly["Rank"] = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"][: len(df_weekly)]
+    df_weekly = df_weekly.rename(columns={"username": "Username", "weekly_votes": "Weekly Votes", "last_voted": "Last Voted"})
+    df_weekly = df_weekly[["Rank", "Username", "Weekly Votes", "Last Voted"]]
+    st.dataframe(df_weekly.set_index("Rank"), hide_index=False, use_container_width=True)
+
 
     # 🎯 **Next Matchup Button**
     if st.button("Next Matchup", use_container_width=True):
