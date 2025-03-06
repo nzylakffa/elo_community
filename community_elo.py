@@ -115,12 +115,12 @@ else:
 
     with col1:
         img1 = player1["image_url"] if isinstance(player1["image_url"], str) and player1["image_url"].startswith("http") else DEFAULT_IMAGE
-        st.image(img1, width=200)
+        st.image(img1, width=200, use_column_width="auto")  # Set fixed width
         if st.button(player1["name"], use_container_width=True):
             update_player_elo(player1["name"], player1["elo"] + 10, player2["name"], player2["elo"] - 10)
 
     with col2:
         img2 = player2["image_url"] if isinstance(player2["image_url"], str) and player2["image_url"].startswith("http") else DEFAULT_IMAGE
-        st.image(img2, width=200)
+        st.image(img2, width=200, use_column_width="auto")  # Ensure same size
         if st.button(player2["name"], use_container_width=True):
             update_player_elo(player2["name"], player2["elo"] + 10, player1["name"], player1["elo"] - 10)
