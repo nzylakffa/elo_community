@@ -5,36 +5,6 @@ import numpy as np
 import random
 import datetime
 
-# # 🔧 Remove Streamlit container background, margins & borders
-# st.markdown("""
-#     <style>
-#         /* Remove padding and margin from the main container */
-#         .block-container {
-#             padding: 0px !important;
-#             margin: 0px !important;
-#         }
-
-#         /* Remove background color */
-#         .main {
-#             background-color: transparent !important;
-#         }
-
-#         /* Remove shadow and border */
-#         div[data-testid="stAppViewBlockContainer"] {
-#             background: transparent !important;
-#             border: none !important;
-#             box-shadow: none !important;
-#         }
-
-#         /* Remove the rounded corner effect */
-#         div[data-testid="stVerticalBlock"] {
-#             border-radius: 0px !important;
-#         }
-#     </style>
-# """, unsafe_allow_html=True)
-
-
-
 # 🔧 Supabase Setup
 SUPABASE_URL = st.secrets["supabase"]["url"]
 SUPABASE_KEY = st.secrets["supabase"]["key"]
