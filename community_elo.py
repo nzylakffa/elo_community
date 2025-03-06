@@ -329,11 +329,11 @@ if "selected_player" in st.session_state and st.session_state["selected_player"]
         
         # ✅ Keep selecting Player 2 until it's different from Player 1
         while True:
-                st.session_state["player2_candidates"] = players_df[
-                    (players_df["elo"] > st.session_state["player1"]["elo"] - 100) & 
-                    (players_df["elo"] < st.session_state["player1"]["elo"] + 100) & 
-                    (players_df["pos"].isin(st.session_state["selected_position"]))  # ✅ Ensure same position
-                ]
+            st.session_state["player2_candidates"] = players_df[
+                (players_df["elo"] > st.session_state["player1"]["elo"] - 100) & 
+                (players_df["elo"] < st.session_state["player1"]["elo"] + 100) & 
+                (players_df["pos"].isin(st.session_state["selected_position"]))  # ✅ Ensure same position
+            ]
 
             st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(players_df)
         
