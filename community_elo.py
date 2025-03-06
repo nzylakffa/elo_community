@@ -38,7 +38,6 @@ def get_user_data():
     df["total_votes"] = df["total_votes"].astype(float)  # ✅ Now supports decimal votes
     df["weekly_votes"] = df["weekly_votes"].astype(float)
 
-
     return df
 
 ### ✅ **Update User Vote Count (Now Counts 0.25 Per Selection)**
@@ -142,41 +141,41 @@ else:
     st.markdown("<h1 style='text-align: center;'>Who Would You Rather Draft?</h1>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
 
-    def display_player(player, col, matchup_id):
-        with col:
-            # ✅ Center image using HTML & CSS
-            st.markdown(
-                f"""
-                <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
-                    <img src="{player['image_url'] if player['image_url'] else DEFAULT_IMAGE}" width="200" style="border-radius: 10px;">
-                    <div style="margin-top: 10px;">
-                        {st.button(player["name"], use_container_width=True)}
-                    </div>
+def display_player(player, col, matchup_id):
+    with col:
+        # ✅ Center image using HTML & CSS
+        st.markdown(
+            f"""
+            <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                <img src="{player['image_url'] if player['image_url'] else DEFAULT_IMAGE}" width="200" style="border-radius: 10px;">
+                <div style="margin-top: 10px;">
+                    {st.button(player["name"], use_container_width=True)}
                 </div>
-                """,
-                unsafe_allow_html=True
-            )
-                if st.session_state.get("last_voted_matchup") != matchup_id and not st.session_state.get("vote_processed", False):  
-                    winner, loser = (player1, player2) if player["name"] == player1["name"] else (player2, player1)
-                    new_winner_elo, new_loser_elo = calculate_elo(winner["elo"], loser["elo"])
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+            if st.session_state.get("last_voted_matchup") != matchup_id and not st.session_state.get("vote_processed", False):  
+                winner, loser = (player1, player2) if player["name"] == player1["name"] else (player2, player1)
+                new_winner_elo, new_loser_elo = calculate_elo(winner["elo"], loser["elo"])
+            
+                update_player_elo(winner["name"], new_winner_elo, loser["name"], new_loser_elo)
+                if not st.session_state.get("vote_processed", False):  
+                    update_user_vote(st.session_state["username"])  
+                    st.session_state["vote_processed"] = True  # ✅ Prevent extra votes
                 
-                    update_player_elo(winner["name"], new_winner_elo, loser["name"], new_loser_elo)
-                    if not st.session_state.get("vote_processed", False):  
-                        update_user_vote(st.session_state["username"])  
-                        st.session_state["vote_processed"] = True  # ✅ Prevent extra votes
-                    
-                    # ✅ Track that this matchup has been voted on
-                    st.session_state["last_voted_matchup"] = matchup_id
-                    st.session_state["vote_registered"] = True  # ✅ Prevent further votes until reset
+                # ✅ Track that this matchup has been voted on
+                st.session_state["last_voted_matchup"] = matchup_id
+                st.session_state["vote_registered"] = True  # ✅ Prevent further votes until reset
 
-                
-                    st.session_state["updated_elo"] = {
-                        winner["name"]: new_winner_elo,
-                        loser["name"]: new_loser_elo
-                    }
-                    st.session_state["selected_player"] = player["name"]
-                else:
-                    st.warning("⚠️ You already voted! Click 'Next Matchup' to vote again.")
+            
+                st.session_state["updated_elo"] = {
+                    winner["name"]: new_winner_elo,
+                    loser["name"]: new_loser_elo
+                }
+                st.session_state["selected_player"] = player["name"]
+            else:
+                st.warning("⚠️ You already voted! Click 'Next Matchup' to vote again.")
 
     display_player(player1, col1, matchup_id)
     display_player(player2, col2, matchup_id)
