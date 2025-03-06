@@ -111,6 +111,9 @@ else:
 
     # 🎯 **Matchup Selection Logic**
     if "player1" not in st.session_state or "player2" not in st.session_state:
+        # ✅ Generate a unique ID for the matchup to prevent duplicate voting
+        matchup_id = f"{st.session_state['player1']['name']}_vs_{st.session_state['player2']['name']}"
+
         while True:
             st.session_state["player1"] = aggressive_weighted_selection(players_df)
             st.session_state["player2_candidates"] = players_df[
@@ -138,14 +141,17 @@ else:
         with col:
             st.image(player["image_url"] if player["image_url"] else DEFAULT_IMAGE, width=200)
             if st.button(player["name"], use_container_width=True):
-                if not st.session_state.get("vote_registered", False):  # ✅ Prevent multiple votes
+                if st.session_state.get("last_voted_matchup") != matchup_id:  # ✅ Only vote if this matchup hasn't been counted
                     winner, loser = (player1, player2) if player["name"] == player1["name"] else (player2, player1)
                     new_winner_elo, new_loser_elo = calculate_elo(winner["elo"], loser["elo"])
-
+                
                     update_player_elo(winner["name"], new_winner_elo, loser["name"], new_loser_elo)
-                    update_user_vote(st.session_state["username"])  # ✅ Only counts once
+                    update_user_vote(st.session_state["username"])  # ✅ Vote only once per matchup
+                
+                    # ✅ Track that this matchup has been voted on
+                    st.session_state["last_voted_matchup"] = matchup_id
                     st.session_state["vote_registered"] = True  # ✅ Prevent further votes until reset
-
+                
                     st.session_state["updated_elo"] = {
                         winner["name"]: new_winner_elo,
                         loser["name"]: new_loser_elo
@@ -171,6 +177,7 @@ else:
 
     # 🎯 **Next Matchup Button**
     if st.button("Next Matchup", use_container_width=True):
+        st.session_state["last_voted_matchup"] = None  # ✅ Reset vote tracking for the new matchup
         st.session_state["vote_registered"] = False  # ✅ Reset vote tracking
 
         while True:
