@@ -102,27 +102,21 @@ users_df = get_user_data()
 if players_df.empty:
     st.error("⚠️ No players available! Check your database.")
 else:
-    # Fetch player data safely
-    player1 = players_df.sample(1).iloc[0]  # Select random player
-    player2 = players_df.sample(1).iloc[0]  # Select another random player
+    # Fetch two random players
+    player1 = players_df.sample(1).iloc[0]
+    player2 = players_df.sample(1).iloc[0]
 
     st.title("Who Would You Rather Draft?")
 
-    # Create two equal columns for better layout
+    # Create two columns for side-by-side layout
     col1, col2 = st.columns(2)
 
     with col1:
-        st.image(player1["image_url"], width=200)  # Display image
-        st.markdown(f"### {player1['name']}")  # Player name
-        st.markdown(f"**Elo:** {player1['elo']}")  # Elo rating
-        if st.button(player1["name"]):  # Button without "Pick"
+        st.image(player1["image_url"], width=200)  # Show player image
+        if st.button(player1["name"], use_container_width=True):  # Button with player name only
             update_player_elo(player1["name"], player1["elo"] + 10, player2["name"], player2["elo"] - 10)
 
     with col2:
         st.image(player2["image_url"], width=200)
-        st.markdown(f"### {player2['name']}")
-        st.markdown(f"**Elo:** {player2['elo']}")
-        if st.button(player2["name"]):
+        if st.button(player2["name"], use_container_width=True):
             update_player_elo(player2["name"], player2["elo"] + 10, player1["name"], player1["elo"] - 10)
-
-
