@@ -23,7 +23,6 @@ def get_players():
     df = pd.DataFrame(data)
     df["elo"] = pd.to_numeric(df["elo"], errors="coerce")
     df["Votes"] = pd.to_numeric(df["Votes"], errors="coerce")
-    
     df["pos_rank"] = df.groupby("pos")["elo"].rank(method="min", ascending=False).astype(int)
 
     return df
@@ -96,15 +95,15 @@ players_df = get_players()
 if players_df.empty:
     st.error("⚠️ No players available!")
 else:
-    # Add Username Input
+    # 🎯 **Username Input**
     st.markdown("<h3 style='text-align: center;'>📝 Add a Username to Compete on the Leaderboard!</h3>", unsafe_allow_html=True)
     username = st.text_input("Enter Username", value=st.session_state.get("username", ""), max_chars=15)
 
     if username:
         st.session_state["username"] = username.lower()
-        update_user_vote(username)  # Track user but don't count extra votes
+        update_user_vote(username)
 
-    # Select players
+    # 🎯 **Matchup Selection Logic**
     if "player1" not in st.session_state or "player2" not in st.session_state:
         st.session_state.player1 = aggressive_weighted_selection(players_df)
         st.session_state.player2_candidates = players_df[
@@ -115,17 +114,16 @@ else:
     player1 = st.session_state.player1
     player2 = st.session_state.player2
 
-    # Store initial Elo ratings
+    # 🎯 **Store Initial Elo Ratings**
     if "initial_elo" not in st.session_state:
         st.session_state["initial_elo"] = {}
-
     if player1["name"] not in st.session_state["initial_elo"]:
         st.session_state["initial_elo"][player1["name"]] = player1["elo"]
     if player2["name"] not in st.session_state["initial_elo"]:
         st.session_state["initial_elo"][player2["name"]] = player2["elo"]
 
-    # UI
-    st.title("Who Would You Rather Draft?")
+    # 🎯 **Matchup Display**
+    st.markdown("<h1 style='text-align: center;'>Who Would You Rather Draft?</h1>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
 
     def display_player(player, col):
@@ -141,7 +139,7 @@ else:
     display_player(player1, col1)
     display_player(player2, col2)
 
-    # Show Elo update after selection
+    # 🎯 **Show Elo Update**
     if "selected_player" in st.session_state and st.session_state["selected_player"]:
         st.markdown("<hr>", unsafe_allow_html=True)
         st.markdown("<h3 style='text-align: center;'>📊 Elo Changes</h3>", unsafe_allow_html=True)
@@ -151,7 +149,7 @@ else:
             change = st.session_state["updated_elo"][player["name"]] - st.session_state["initial_elo"][player["name"]]
             st.markdown(f"<div style='background-color:{color}; padding: 10px; border-radius: 5px; text-align: center;'><b>{player['name']}</b>: {st.session_state['updated_elo'][player['name']]} ELO ({change:+})</div>", unsafe_allow_html=True)
 
-    # Next Matchup Button
+    # 🎯 **Next Matchup Button**
     if st.button("Next Matchup", use_container_width=True):
         del st.session_state["selected_player"]
         st.rerun()
