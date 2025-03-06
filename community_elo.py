@@ -86,8 +86,8 @@ def calculate_elo(winner_elo, loser_elo, k=24):
     return round(new_winner_elo), round(new_loser_elo)
 
 
-### ✅ **Weighted Selection for Matchups**
-def aggressive_weighted_selection(df, weight_col="elo", alpha=3):
+### ✅ **Weighted Selection for Matchups (More Lower-Ranked Players)**
+def aggressive_weighted_selection(df, weight_col="elo", alpha=2.5):
     df = df.copy()
 
     if df.empty:
@@ -98,7 +98,13 @@ def aggressive_weighted_selection(df, weight_col="elo", alpha=3):
     max_val = df[weight_col].max()
     df["normalized_elo"] = (df[weight_col] - min_val) / ((max_val - min_val) + 1e-9)
     
+    # ✅ Adjust weighting to favor more lower-ranked players
     df["weight"] = df["normalized_elo"] ** alpha
+
+    # ✅ Introduce a small randomness factor to occasionally pick lower players
+    df["random_factor"] = 1 + (0.15 * np.random.rand(len(df)))  # Adds up to 15% variation
+    df["weight"] *= df["random_factor"]  # Apply randomness
+    
     df["weight"] /= df["weight"].sum()
 
     if df["weight"].sum() == 0:
