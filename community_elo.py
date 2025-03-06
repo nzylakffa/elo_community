@@ -140,11 +140,18 @@ else:
         with col:
             st.image(player["image_url"] if player["image_url"] else DEFAULT_IMAGE, width=200)
             if st.button(player["name"], use_container_width=True):
-                new_elo1, new_elo2 = calculate_elo(player1["elo"], player2["elo"]) if player["name"] == player1["name"] else calculate_elo(player2["elo"], player1["elo"])
-                update_player_elo(player1["name"], new_elo1, player2["name"], new_elo2)
+                if player["name"] == player1["name"]:
+                    new_winner_elo, new_loser_elo = calculate_elo(player1["elo"], player2["elo"])
+                    update_player_elo(player1["name"], new_winner_elo, player2["name"], new_loser_elo)
+                else:
+                    new_winner_elo, new_loser_elo = calculate_elo(player2["elo"], player1["elo"])
+                    update_player_elo(player2["name"], new_winner_elo, player1["name"], new_loser_elo)
+            
                 update_user_vote(st.session_state["username"])
-                st.session_state["updated_elo"] = {player1["name"]: new_elo1, player2["name"]: new_elo2}
+                st.session_state["updated_elo"] = {player1["name"]: new_winner_elo if player1["name"] == player["name"] else new_loser_elo,
+                                                   player2["name"]: new_winner_elo if player2["name"] == player["name"] else new_loser_elo}
                 st.session_state["selected_player"] = player["name"]
+
 
     display_player(player1, col1)
     display_player(player2, col2)
