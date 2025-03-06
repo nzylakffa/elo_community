@@ -40,7 +40,7 @@ def get_user_data():
 
     return df
 
-### ✅ **Update User Vote Count**
+### ✅ **Update User Vote Count (Now Counts 0.25 Per Selection)**
 def update_user_vote(username):
     today = datetime.date.today().strftime("%Y-%m-%d")
 
@@ -50,19 +50,19 @@ def update_user_vote(username):
     if not user:
         supabase.table("user_votes").insert({
             "username": username.lower(),
-            "total_votes": 1,
-            "weekly_votes": 1,
+            "total_votes": 0.25,  # ✅ Adjusted to count 0.25 per selection
+            "weekly_votes": 0.25,
             "last_voted": today
         }).execute()
     else:
         user = user[0]
         update_data = {
-            "total_votes": user["total_votes"] + 1,
-            "weekly_votes": user["weekly_votes"] + 1,
+            "total_votes": user["total_votes"] + 0.25,  # ✅ Now increments by 0.25
+            "weekly_votes": user["weekly_votes"] + 0.25,
             "last_voted": today
         }
         if datetime.datetime.today().weekday() == 0 and user["last_voted"] != today:
-            update_data["weekly_votes"] = 1  # Reset to 1 on Monday
+            update_data["weekly_votes"] = 0.25  # Reset to 0.25 on Monday
 
         supabase.table("user_votes").update(update_data).eq("username", username.lower()).execute()
 
