@@ -140,17 +140,23 @@ else:
         with col:
             st.image(player["image_url"] if player["image_url"] else DEFAULT_IMAGE, width=200)
             if st.button(player["name"], use_container_width=True):
-                if player["name"] == player1["name"]:
-                    new_winner_elo, new_loser_elo = calculate_elo(player1["elo"], player2["elo"])
-                    update_player_elo(player1["name"], new_winner_elo, player2["name"], new_loser_elo)
+                if not st.session_state.get("username"):  # Check if username is empty
+                    st.error("❌ Please input a username before making a pick! It can be anything!")
                 else:
-                    new_winner_elo, new_loser_elo = calculate_elo(player2["elo"], player1["elo"])
-                    update_player_elo(player2["name"], new_winner_elo, player1["name"], new_loser_elo)
+                    if player["name"] == player1["name"]:
+                        new_winner_elo, new_loser_elo = calculate_elo(player1["elo"], player2["elo"])
+                        update_player_elo(player1["name"], new_winner_elo, player2["name"], new_loser_elo)
+                    else:
+                        new_winner_elo, new_loser_elo = calculate_elo(player2["elo"], player1["elo"])
+                        update_player_elo(player2["name"], new_winner_elo, player1["name"], new_loser_elo)
             
-                update_user_vote(st.session_state["username"])
-                st.session_state["updated_elo"] = {player1["name"]: new_winner_elo if player1["name"] == player["name"] else new_loser_elo,
-                                                   player2["name"]: new_winner_elo if player2["name"] == player["name"] else new_loser_elo}
-                st.session_state["selected_player"] = player["name"]
+                    update_user_vote(st.session_state["username"])
+                    st.session_state["updated_elo"] = {
+                        player1["name"]: new_winner_elo if player1["name"] == player["name"] else new_loser_elo,
+                        player2["name"]: new_winner_elo if player2["name"] == player["name"] else new_loser_elo
+                    }
+                    st.session_state["selected_player"] = player["name"]
+
 
 
     display_player(player1, col1)
