@@ -5,36 +5,6 @@ import numpy as np
 import random
 import datetime
 
-# # 🔧 Remove Streamlit container background, margins & borders
-# st.markdown("""
-#     <style>
-#         /* Remove padding and margin from the main container */
-#         .block-container {
-#             padding: 0px !important;
-#             margin: 0px !important;
-#         }
-
-#         /* Remove background color */
-#         .main {
-#             background-color: transparent !important;
-#         }
-
-#         /* Remove shadow and border */
-#         div[data-testid="stAppViewBlockContainer"] {
-#             background: transparent !important;
-#             border: none !important;
-#             box-shadow: none !important;
-#         }
-
-#         /* Remove the rounded corner effect */
-#         div[data-testid="stVerticalBlock"] {
-#             border-radius: 0px !important;
-#         }
-#     </style>
-# """, unsafe_allow_html=True)
-
-
-
 # 🔧 Supabase Setup
 SUPABASE_URL = st.secrets["supabase"]["url"]
 SUPABASE_KEY = st.secrets["supabase"]["key"]
@@ -128,14 +98,14 @@ def aggressive_weighted_selection(df, weight_col="elo", alpha=1):
     min_val = df[weight_col].min()
     max_val = df[weight_col].max()
     df["normalized_elo"] = (df[weight_col] - min_val) / ((max_val - min_val) + 1e-9)
-
+    
     # ✅ Adjust weighting to favor more lower-ranked players
     df["weight"] = df["normalized_elo"] ** alpha
 
     # ✅ Introduce a small randomness factor to occasionally pick lower players
     df["random_factor"] = 1 + (0.15 * np.random.rand(len(df)))  # Adds up to 15% variation
     df["weight"] *= df["random_factor"]  # Apply randomness
-
+    
     df["weight"] /= df["weight"].sum()
 
     if df["weight"].sum() == 0:
@@ -169,7 +139,7 @@ else:
         "Only TEs": ["TE"],
         "Only D/ST": ["D/ST"]
     }
-
+    
     # ✅ Preserve the selected position filter across reruns
     if "selected_position" not in st.session_state:
         st.session_state["selected_position"] = list(position_options["All Positions"])  # Default to all positions
@@ -179,7 +149,7 @@ else:
         list(position_options.keys()), 
         index=list(position_options.keys()).index(st.session_state.get("selected_position_label", "All Positions"))
     )
-
+    
     # ✅ Store both the label and actual position list
     if "selected_position_label" not in st.session_state or st.session_state["selected_position_label"] != selected_position:
         st.session_state["selected_position_label"] = selected_position  # Save label for reruns
@@ -187,45 +157,45 @@ else:
         st.rerun()  # ✅ Force a full update when position changes
 
 
-
+    
     if "selected_position" not in st.session_state or st.session_state["selected_position"] != position_options[selected_position]:
         st.session_state["selected_position"] = position_options[selected_position]
-
+        
         # ✅ Ensure position filter is set
         selected_position = st.session_state.get("selected_position", [])
-
+        
         # ✅ Filter players based on position selection
         filtered_players_df = players_df if not selected_position else players_df[
             players_df["pos"].isin(selected_position)
         ]
-
+        
         # ✅ Prevent empty filtered list
         if filtered_players_df.empty:
             st.warning("⚠️ No valid players found for the selected position. Showing all positions.")
             filtered_players_df = players_df  # ✅ Fallback to all players
-
+        
         # ✅ Select Player 1
         st.session_state["player1"] = aggressive_weighted_selection(filtered_players_df)
 
-
+        
         while True:
             st.session_state["player2_candidates"] = filtered_players_df[
                 (filtered_players_df["elo"] > st.session_state["player1"]["elo"] - 100) & 
                 (filtered_players_df["elo"] < st.session_state["player1"]["elo"] + 100) & 
                 (filtered_players_df["pos"].isin(selected_position))
             ]
-
+        
             # ✅ Ensure Player 2 has valid options
             if st.session_state["player2_candidates"].empty:
                 st.warning("⚠️ Not enough valid matchups. Selecting another player from the same position.")
                 st.session_state["player2"] = aggressive_weighted_selection(filtered_players_df)  # ✅ Fallback to same position pool
             else:
                 st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"])
-
+        
             # ✅ Ensure Player 1 and Player 2 are different before exiting loop
             if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
                 break  # ✅ Ensure players are different
-
+    
         st.rerun()  # ✅ Force a full update to apply the new selection
 
 
@@ -234,15 +204,15 @@ else:
     if "player1" not in st.session_state or "player2" not in st.session_state:
         # ✅ Filter players based on the selected position
         filtered_players_df = players_df if st.session_state["selected_position"] is None else players_df[players_df["pos"].isin(st.session_state["selected_position"])]
-
+        
         # ✅ Ensure we still have enough players
         if filtered_players_df.empty:
             st.warning("⚠️ No players available for the selected position filter. Showing all positions instead.")
             filtered_players_df = players_df  # Default back to all players
-
+        
         # ✅ Select Player 1
         st.session_state["player1"] = aggressive_weighted_selection(filtered_players_df)
-
+        
         # ✅ Keep selecting Player 2 until it's different from Player 1
         while True:
             st.session_state["player2_candidates"] = filtered_players_df[
@@ -251,29 +221,29 @@ else:
                 (filtered_players_df["pos"].isin(st.session_state.get("selected_position", players_df["pos"].unique())))
             ]
 
-
+        
             # ✅ Ensure a valid Player 2 exists
             if st.session_state["player2_candidates"].empty:
                 st.warning("⚠️ Not enough valid matchups within the Elo range. Selecting another player from the same position.")
                 st.session_state["player2"] = aggressive_weighted_selection(filtered_players_df)  # ✅ Fallback to same position pool
             else:
                 st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"])
-
+        
             # ✅ Ensure Player 1 and Player 2 are different before exiting loop
             if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
                 break  # ✅ Ensure players are different
 
 
-
+    
     # ✅ Assign local variables after ensuring session state is initialized
     player1 = st.session_state["player1"]
     player2 = st.session_state["player2"]
-
+    
     # ✅ Ensure players are selected before generating a matchup ID
     if "player1" not in st.session_state or "player2" not in st.session_state or st.session_state["player1"] is None or st.session_state["player2"] is None:
         st.warning("⚠️ Players not selected yet. Please select a position filter or refresh.")
         st.stop()  # ✅ Prevent further execution if no players are available
-
+    
     matchup_id = f"{st.session_state['player1']['name']}_vs_{st.session_state['player2']['name']}"
 
 
@@ -296,9 +266,39 @@ def display_player(player, col, matchup_id):
             unsafe_allow_html=True
         )
 
-        # ✅ Button is now separate from Markdown (fixes spacing)
-        if st.button(player["name"], use_container_width=True):
-        # ✅ Button with player name + (Team | Pos)
+        # ✅ Check if this player was selected
+        is_selected = st.session_state.get("selected_player") == player["name"]
+        
+        # ✅ Apply green background if selected, otherwise default
+        button_style = """
+            <style>
+                div[data-testid="stButton"] button {
+                    background-color: #f0f2f6;  /* Default button color */
+                    color: black;
+                    border: 1px solid #d1d5db;
+                }
+                div[data-testid="stButton"] button:hover {
+                    background-color: #e2e8f0;
+                }
+            </style>
+        """
+
+        # ✅ Override style if player is selected
+        if is_selected:
+            button_style = """
+                <style>
+                    div[data-testid="stButton"] button {
+                        background-color: #28a745 !important;  /* Green */
+                        color: white !important;
+                        border: 1px solid #1e7e34;
+                    }
+                </style>
+            """
+
+        # ✅ Inject CSS
+        st.markdown(button_style, unsafe_allow_html=True)
+
+        # ✅ Create button
         if st.button(f"{player['name']} ({player['team']} | {player['pos']})", use_container_width=True):
             # ✅ Prevent clicking without a username
             if "username" not in st.session_state or not st.session_state["username"].strip():
@@ -307,18 +307,18 @@ def display_player(player, col, matchup_id):
                 if st.session_state.get("last_voted_matchup") != matchup_id and not st.session_state.get("vote_processed", False):  
                     winner, loser = (player1, player2) if player["name"] == player1["name"] else (player2, player1)
                     new_winner_elo, new_loser_elo = calculate_elo(winner["elo"], loser["elo"])
-        
 
                     update_player_elo(winner["name"], new_winner_elo, loser["name"], new_loser_elo)
                     if not st.session_state.get("vote_processed", False):  
                         update_user_vote(st.session_state["username"])  # ✅ Only update if username exists
                         st.session_state["vote_processed"] = True  # ✅ Prevent extra votes
-        
+
+                    # ✅ Store selected player
+                    st.session_state["selected_player"] = player["name"]
 
                     # ✅ Track that this matchup has been voted on
                     st.session_state["last_voted_matchup"] = matchup_id
                     st.session_state["vote_registered"] = True  # ✅ Prevent further votes until reset
-        
 
                     st.session_state["updated_elo"] = {
                         winner["name"]: new_winner_elo,
@@ -369,16 +369,16 @@ if "selected_player" in st.session_state and st.session_state["selected_player"]
         # ✅ Reset vote tracking for the new matchup
         st.session_state["last_voted_matchup"] = None  
         st.session_state["vote_processed"] = False  
-
+        
         # ✅ Always use the stored position filter for Player 1
         filtered_players_df = players_df if st.session_state.get("selected_position") is None else players_df[
             players_df["pos"].isin(st.session_state["selected_position"])
         ]
-
+        
         # ✅ Select Player 1 from the filtered list
         st.session_state["player1"] = aggressive_weighted_selection(filtered_players_df)
 
-
+        
         # ✅ Keep selecting Player 2 until it's different from Player 1
         while True:
             st.session_state["player2_candidates"] = players_df[
@@ -388,17 +388,17 @@ if "selected_player" in st.session_state and st.session_state["selected_player"]
             ]
 
             st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(players_df)
-
+        
             if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
                 break  # ✅ Ensure players are different
-
+        
         # ✅ Reset Elo tracking
         st.session_state["initial_elo"] = {
             st.session_state["player1"]["name"]: st.session_state["player1"]["elo"],
             st.session_state["player2"]["name"]: st.session_state["player2"]["elo"]
         }
         st.session_state["selected_player"] = None
-
+        
         st.rerun()
 
 
