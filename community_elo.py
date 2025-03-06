@@ -109,19 +109,48 @@ else:
         st.session_state["username"] = username.lower()  # ✅ Store as lowercase
         update_user_vote(st.session_state["username"])  # ✅ Track the vote
 
+    # 🎯 **Position Selection Dropdown**
+    position_options = {
+        "All Positions": None,
+        "Only RBs & WRs": ["RB", "WR"],
+        "Only RBs": ["RB"],
+        "Only WRs": ["WR"],
+        "Only QBs": ["QB"],
+        "Only TEs": ["TE"],
+        "Only D/ST": ["D/ST"]
+    }
+
+selected_position = st.selectbox("Select Position Filter", list(position_options.keys()), index=0)
+
+# ✅ Store selection in session state
+st.session_state["selected_position"] = position_options[selected_position]
+
+
     # 🎯 **Matchup Selection Logic**
     # ✅ Ensure session state variables exist before accessing them
     if "player1" not in st.session_state or "player2" not in st.session_state:
-        st.session_state["player1"] = aggressive_weighted_selection(players_df)
-        st.session_state["player2_candidates"] = players_df[
-            (players_df["elo"] > st.session_state["player1"]["elo"] - 50) & 
-            (players_df["elo"] < st.session_state["player1"]["elo"] + 50)
-        ]
-        st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(players_df)
-    
-        # ✅ Ensure players are different
-        while st.session_state["player2"]["name"] == st.session_state["player1"]["name"]:
-            st.session_state["player2"] = aggressive_weighted_selection(players_df)
+        # ✅ Filter players based on the selected position
+        filtered_players_df = players_df if st.session_state["selected_position"] is None else players_df[players_df["pos"].isin(st.session_state["selected_position"])]
+        
+        # ✅ Ensure we still have enough players
+        if filtered_players_df.empty:
+            st.warning("⚠️ No players available for the selected position filter. Showing all positions instead.")
+            filtered_players_df = players_df  # Default back to all players
+        
+        # ✅ Select Player 1
+        st.session_state["player1"] = aggressive_weighted_selection(filtered_players_df)
+        
+        # ✅ Keep selecting Player 2 until it's different from Player 1
+        while True:
+            st.session_state["player2_candidates"] = filtered_players_df[
+                (filtered_players_df["elo"] > st.session_state["player1"]["elo"] - 50) & 
+                (filtered_players_df["elo"] < st.session_state["player1"]["elo"] + 50)
+            ]
+            st.session_state["player2"] = aggressive_weighted_selection(st.session_state["player2_candidates"]) if not st.session_state["player2_candidates"].empty else aggressive_weighted_selection(filtered_players_df)
+        
+            if st.session_state["player2"]["name"] != st.session_state["player1"]["name"]:
+                break  # ✅ Ensure players are different
+
     
     # ✅ Assign local variables after ensuring session state is initialized
     player1 = st.session_state["player1"]
