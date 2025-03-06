@@ -21,7 +21,7 @@ except Exception as e:
 
 def get_players():
     """Fetches all players from Supabase and returns a DataFrame."""
-    response = supabase.table("players").select("*").execute()
+    response = supabase.table("players").select("*").order("id").execute()
     
     # Debugging
     st.write("Raw response:", response)  # Prints the raw response
