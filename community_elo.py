@@ -1,20 +1,19 @@
 import streamlit as st
 from supabase import create_client, Client
-import pandas as pd
-import random
-import datetime
 
-from supabase import create_client, Client
+# Load credentials from secrets
+SUPABASE_URL = st.secrets["supabase"]["url"]
+SUPABASE_KEY = st.secrets["supabase"]["key"]
 
-SUPABASE_URL = "https://your-supabase-url.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptbWJtd3NmbXptcm52aml1amN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEyMjk3NDUsImV4cCI6MjA1NjgwNTc0NX0.0XJEj-7RcVtwRZeokZyoGF4-6lh0LM37S_cj8m4zFM0"
-
+# Create Supabase client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-response = supabase.table("players").select("*").execute()
-
-print(response)
-
+# Test connection
+try:
+    response = supabase.table("players").select("*").execute()
+    st.write(response)
+except Exception as e:
+    st.error(f"❌ Error connecting to Supabase: {e}")
 
 
 def get_players():
