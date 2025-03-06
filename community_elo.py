@@ -124,7 +124,7 @@ else:
 
     # 🎯 **Position Selection Dropdown**
     position_options = {
-        "All Positions": [],
+        "All Positions": ["RB", "WR", "TE", "QB", "D/ST"],
         "Only RBs & WRs": ["RB", "WR"],
         "Only RBs": ["RB"],
         "Only WRs": ["WR"],
