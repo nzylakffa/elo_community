@@ -180,18 +180,17 @@ col1, col2 = st.columns(2)
 display_player(player1, col1, matchup_id)
 display_player(player2, col2, matchup_id)
 
+# 🎯 **Show Elo Update**
+if "selected_player" in st.session_state and st.session_state["selected_player"]:
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center;'>📊 Elo Changes</h3>", unsafe_allow_html=True)
 
-    # 🎯 **Show Elo Update**
-    if "selected_player" in st.session_state and st.session_state["selected_player"]:
-        st.markdown("<hr>", unsafe_allow_html=True)
-        st.markdown("<h3 style='text-align: center;'>📊 Elo Changes</h3>", unsafe_allow_html=True)
-
-        for player in [player1, player2]:
-            color = "yellow" if player["name"] == st.session_state["selected_player"] else "transparent"
-            change = st.session_state["updated_elo"][player["name"]] - st.session_state["initial_elo"][player["name"]]
-            st.markdown(f"<div style='background-color:{color}; padding: 10px; border-radius: 5px; text-align: center;'>"
-                        f"<b>{player['name']}</b>: {st.session_state['updated_elo'][player['name']]} ELO ({change:+})"
-                        f"</div>", unsafe_allow_html=True)
+    for player in [player1, player2]:
+        color = "yellow" if player["name"] == st.session_state["selected_player"] else "transparent"
+        change = st.session_state["updated_elo"][player["name"]] - st.session_state["initial_elo"][player["name"]]
+        st.markdown(f"<div style='background-color:{color}; padding: 10px; border-radius: 5px; text-align: center;'>"
+                    f"<b>{player['name']}</b>: {st.session_state['updated_elo'][player['name']]} ELO ({change:+})"
+                    f"</div>", unsafe_allow_html=True)
 
     # 🎯 **Next Matchup Button**
     if st.button("Next Matchup", use_container_width=True):
