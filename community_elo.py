@@ -88,7 +88,7 @@ def calculate_elo(winner_elo, loser_elo, k=24):
 
 
 ### ✅ **Weighted Selection for Matchups (More Lower-Ranked Players)**
-def aggressive_weighted_selection(df, weight_col="elo", alpha=1.5):
+def aggressive_weighted_selection(df, weight_col="elo", alpha=1):
     df = df.copy()
 
     if df.empty:
