@@ -41,7 +41,7 @@ def get_players():
     
     # Ensure correct data types
     df["elo"] = pd.to_numeric(df["elo"], errors="coerce")
-    df["votes"] = pd.to_numeric(df["votes"], errors="coerce")
+    df["Votes"] = pd.to_numeric(df["Votes"], errors="coerce")
     df["pos_rank"] = pd.to_numeric(df["pos_rank"], errors="coerce")
 
     return df
